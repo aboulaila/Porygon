@@ -1,0 +1,12 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+*.user
+*/bin
+*/obj
+/packages
+/Flapple.DatabaseSchema/Flapple.DatabaseSchema.dbmdl
+/Flapple.DatabaseSchema/Flapple.DatabaseSchema.jfm
+*/nuget
