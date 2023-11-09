@@ -92,9 +92,7 @@ namespace Porygon.Entity.Manager
 
             var entity = await DataManager.GetAsync(id);
 
-            await EnrichEntity(entity);
-
-            return FromEntity(entity);
+            return await ToViewModel(entity);
         }
 
         public async Task<IEnumerable<TModel>> GetAll()
@@ -102,7 +100,7 @@ namespace Porygon.Entity.Manager
             var results = await DataManager.GetAll();
             if (results != null && results.Any())
             {
-                return results.Select(e => FromEntity(e));
+                return await Task.WhenAll(results.Select(e => ToViewModel(e)));
             }
 
             return null;
@@ -113,7 +111,7 @@ namespace Porygon.Entity.Manager
             var results = await DataManager.Search(filter);
             if (results != null && results.Any())
             {
-                return results.Select(e => FromEntity(e));
+                return await Task.WhenAll(results.Select(e => ToViewModel(e)));
             }
 
             return null;
@@ -145,14 +143,9 @@ namespace Porygon.Entity.Manager
             return Task.CompletedTask;
         }
 
-        protected virtual Task EnrichEntity(T entity)
-        {
-            return Task.CompletedTask;
-        }
-
         protected abstract T ToEntity(TModel model, bool isNew);
 
-        protected abstract TModel FromEntity(T entity);
+        protected abstract Task<TModel> ToViewModel(T entity);
         #endregion
     }
 
