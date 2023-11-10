@@ -25,7 +25,7 @@ namespace Porygon.Entity.Manager
     public abstract class EntityManager<T, TModel, TFilter, TDataManager> : EntityManager<T, Guid, TModel, TFilter, TDataManager>
            where T : PoryEntity<Guid>
            where TFilter : EntityFilter
-           where TModel : class
+           where TModel : T
            where TDataManager : IEntityDataManager<T, Guid, TFilter>
     {
         protected EntityManager(TDataManager dataManager) : base(dataManager)
@@ -36,7 +36,7 @@ namespace Porygon.Entity.Manager
     public abstract class EntityManager<T, TKey, TModel, TFilter, TDataManager> : IEntityManager<T, TKey, TFilter, TModel>
         where T : PoryEntity<TKey>
         where TFilter : EntityFilter
-        where TModel : class
+        where TModel : T
         where TDataManager : IEntityDataManager<T, TKey, TFilter>
     {
         protected TDataManager DataManager;
@@ -53,13 +53,12 @@ namespace Porygon.Entity.Manager
 
             var entity = ToEntity(model, true);
 
-            using (var scope = new TransactionScope())
-            {
-                await PreCreation(entity);
-                DataManager.Insert(entity);
-                await PostCreation(entity);
-            }
-
+            using var scope = new TransactionScope();
+            
+            await PreCreation(model);
+            DataManager.Insert(entity);
+            await PostCreation(model);
+            
             return entity;
         }
 
@@ -69,28 +68,33 @@ namespace Porygon.Entity.Manager
 
             var entity = ToEntity(model, false);
 
-            using (var scope = new TransactionScope())
-            {
-                await PreUpdate(entity);
-                DataManager.Update(entity);
-                await PostCreation(entity);
-            }
+            using var scope = new TransactionScope();
+
+            await PreUpdate(model);
+            DataManager.Update(entity);
+            await PostCreation(model);
 
             return entity;
         }
 
-        public int Delete(TKey id)
+        public async Task<int> Delete(TKey id)
         {
-            if (id.Equals(default))
+            if (id == null || id.Equals(default))
                 return 0;
 
-            return DataManager.Delete(id);
+            using var scope = new TransactionScope();
+            
+            await PreDeletion(id);
+            var result = DataManager.Delete(id);
+            await PostDeletion(id);
+
+            return result;
         }
 
-        public async Task<TModel> Get(TKey id)
+        public async Task<TModel?> Get(TKey id)
         {
-            if (id.Equals(default))
-                return null;
+            if (id == null || id.Equals(default))
+                return default;
 
             var entity = await DataManager.GetAsync(id);
 
@@ -105,7 +109,7 @@ namespace Porygon.Entity.Manager
                 return await Task.WhenAll(results.Select(e => ToViewModel(e)));
             }
 
-            return null;
+            return new List<TModel>();
         }
 
         public async Task<IEnumerable<TModel>> Search(TFilter filter)
@@ -116,7 +120,7 @@ namespace Porygon.Entity.Manager
                 return await Task.WhenAll(results.Select(e => ToViewModel(e)));
             }
 
-            return null;
+            return new List<TModel>();
         }
         #endregion
 
@@ -135,22 +139,32 @@ namespace Porygon.Entity.Manager
             return Task.CompletedTask;
         }
 
-        protected virtual Task PreCreation(T entity)
+        protected virtual Task PreCreation(TModel model)
         {
             return Task.CompletedTask;
         }
 
-        protected virtual Task PreUpdate(T entity)
+        protected virtual Task PostCreation(TModel model)
         {
             return Task.CompletedTask;
         }
 
-        protected virtual Task PostCreation(T entity)
+        protected virtual Task PreUpdate(TModel model)
         {
             return Task.CompletedTask;
         }
 
-        protected virtual Task PostUpdate(T entity)
+        protected virtual Task PostUpdate(TModel model)
+        {
+            return Task.CompletedTask;
+        }
+
+        private Task PreDeletion(TKey id)
+        {
+            return Task.CompletedTask;
+        }
+
+        private Task PostDeletion(TKey id)
         {
             return Task.CompletedTask;
         }

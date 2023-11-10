@@ -7,9 +7,9 @@
     {
         Task<T> Create(TModel model);
         Task<T> Update(TModel model);
-        int Delete(TKey id);
+        Task<int> Delete(TKey id);
         Task<IEnumerable<TModel>> GetAll();
-        Task<TModel> Get(TKey id);
+        Task<TModel?> Get(TKey id);
         Task<IEnumerable<TModel>> Search(TFilter filter);
     }
 }

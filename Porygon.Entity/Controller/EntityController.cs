@@ -24,7 +24,7 @@ namespace Porygon.Entity.Controller
 
     public abstract class EntityController<T, TModel, TFilter, TManager> : EntityController<T, Guid, TModel, TFilter, TManager>
         where T : PoryEntity<Guid>
-        where TModel : class
+        where TModel : T
         where TFilter : EntityFilter, new()
         where TManager : IEntityManager<T, Guid, TFilter, TModel>
     {
@@ -38,7 +38,7 @@ namespace Porygon.Entity.Controller
     [Route("api/[controller]")]
     public abstract class EntityController<T, TKey, TModel, TFilter, TManager> : ControllerBase
     where T : PoryEntity<TKey>
-    where TModel : class
+    where TModel : T
     where TFilter : EntityFilter, new()
     where TManager : IEntityManager<T, TKey, TFilter, TModel>
     {
@@ -79,11 +79,11 @@ namespace Porygon.Entity.Controller
         }
 
         [HttpDelete("{id?}")]
-        public IActionResult Delete(TKey id)
+        public async Task<IActionResult> Delete(TKey id)
         {
             try
             {
-                return Manager.Delete(id) > 0 ? Ok() : BadRequest();
+                return await Manager.Delete(id) > 0 ? Ok() : BadRequest();
             }
             catch (Exception exception)
             {
