@@ -55,6 +55,7 @@ namespace Porygon.Entity.Manager
 
             using (var scope = new TransactionScope())
             {
+                await PreCreation(entity);
                 DataManager.Insert(entity);
                 await PostCreation(entity);
             }
@@ -70,6 +71,7 @@ namespace Porygon.Entity.Manager
 
             using (var scope = new TransactionScope())
             {
+                await PreUpdate(entity);
                 DataManager.Update(entity);
                 await PostCreation(entity);
             }
@@ -130,6 +132,16 @@ namespace Porygon.Entity.Manager
         {
             if (model == null)
                 throw new ArgumentException("Model cannot be null");
+            return Task.CompletedTask;
+        }
+
+        protected virtual Task PreCreation(T entity)
+        {
+            return Task.CompletedTask;
+        }
+
+        protected virtual Task PreUpdate(T entity)
+        {
             return Task.CompletedTask;
         }
 
