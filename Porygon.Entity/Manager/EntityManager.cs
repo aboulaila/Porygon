@@ -47,6 +47,28 @@ namespace Porygon.Entity.Manager
         }
 
         #region Public Methods
+
+        public async Task<TModel?> Get(TKey id)
+        {
+            if (id == null || id.Equals(default))
+                return default;
+
+            var entity = await DataManager.GetAsync(id);
+
+            return await ToViewModel(entity);
+        }
+
+        public async Task<IEnumerable<TModel>> GetAll()
+        {
+            var results = await DataManager.GetAll();
+            if (results != null && results.Any())
+            {
+                return await Task.WhenAll(results.Select(e => ToViewModel(e)));
+            }
+
+            return new List<TModel>();
+        }
+
         public async Task<T> Create(TModel model)
         {
             await PreCreateValidation(model);
@@ -60,6 +82,19 @@ namespace Porygon.Entity.Manager
             await PostCreation(model);
 
             return model;
+        }
+
+        public async Task<List<T>> CreateBulk(List<TModel> models)
+        {
+            var entities = new List<T>();
+
+            foreach (var model in models)
+            {
+                var entity = await Create(model);
+                entities.Add(entity);
+            }
+
+            return entities;
         }
 
         public async Task<T> Update(TModel model)
@@ -88,27 +123,6 @@ namespace Porygon.Entity.Manager
             await PostDeletion(id);
 
             return result;
-        }
-
-        public async Task<TModel?> Get(TKey id)
-        {
-            if (id == null || id.Equals(default))
-                return default;
-
-            var entity = await DataManager.GetAsync(id);
-
-            return await ToViewModel(entity);
-        }
-
-        public async Task<IEnumerable<TModel>> GetAll()
-        {
-            var results = await DataManager.GetAll();
-            if (results != null && results.Any())
-            {
-                return await Task.WhenAll(results.Select(e => ToViewModel(e)));
-            }
-
-            return new List<TModel>();
         }
 
         public async Task<IEnumerable<TModel>> Search(TFilter filter)

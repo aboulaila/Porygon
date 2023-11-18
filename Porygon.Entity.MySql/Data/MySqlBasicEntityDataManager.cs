@@ -20,14 +20,9 @@ namespace Porygon.Entity.MySql.Data
             Connection = connection;
         }
 
-        public virtual int Delete(TKey id)
+        public T Get(TKey id)
         {
-            return Connection.Delete<T>(new { id }).ExecuteAffrows();
-        }
-
-        public async Task<int> DeleteAsync(TKey id)
-        {
-            return await Connection.Delete<T>(new { id }).ExecuteAffrowsAsync();
+            return Connection.Select<T>(id).First();
         }
 
         public async Task<T> GetAsync(TKey id)
@@ -38,11 +33,6 @@ namespace Porygon.Entity.MySql.Data
         public async Task<IEnumerable<T>> GetAll()
         {
             return await Connection.Select<T>().ToListAsync();
-        }
-
-        public T Get(TKey id)
-        {
-            return Connection.Select<T>(id).First();
         }
 
         public int Insert(T entity)
@@ -73,6 +63,16 @@ namespace Porygon.Entity.MySql.Data
         public async Task<int> UpdateAsync(T entity)
         {
             return await Connection.Update<T>().SetSourceIgnore(entity, col => col == null).ExecuteAffrowsAsync();
+        }
+
+        public virtual int Delete(TKey id)
+        {
+            return Connection.Delete<T>(new { id }).ExecuteAffrows();
+        }
+
+        public async Task<int> DeleteAsync(TKey id)
+        {
+            return await Connection.Delete<T>(new { id }).ExecuteAffrowsAsync();
         }
     }
 }
