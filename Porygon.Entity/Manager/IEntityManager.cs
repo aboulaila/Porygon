@@ -3,7 +3,7 @@
     public interface IEntityManager<T, TKey, TFilter, TModel>
         where T : PoryEntity<TKey>
         where TFilter : EntityFilter
-        where TModel : class
+        where TModel : T
     {
         Task<T> Create(TModel model);
         Task<T> Update(TModel model);

@@ -97,7 +97,7 @@ namespace Porygon.Entity.Controller
         {
             try
             {
-                TModel result = await Manager.Get(id);
+                TModel? result = await Manager.Get(id);
                 return result != null ? Ok(result) : BadRequest();
             }
             catch (Exception exception)

@@ -3,7 +3,7 @@ using System.Transactions;
 
 namespace Porygon.Entity.Manager
 {
-    public abstract class EntityManager<T, TDataManager> : EntityManager<T, Guid, T, EntityFilter, TDataManager>
+    public class EntityManager<T, TDataManager> : EntityManager<T, Guid, T, EntityFilter, TDataManager>
            where T : PoryEntity<Guid>
            where TDataManager : IEntityDataManager<T, Guid, EntityFilter>
     {
@@ -12,7 +12,7 @@ namespace Porygon.Entity.Manager
         }
     }
 
-    public abstract class EntityManager<T, TFilter, TDataManager> : EntityManager<T, Guid, T, TFilter, TDataManager>
+    public class EntityManager<T, TFilter, TDataManager> : EntityManager<T, Guid, T, TFilter, TDataManager>
            where T : PoryEntity<Guid>
            where TFilter : EntityFilter
            where TDataManager : IEntityDataManager<T, Guid, TFilter>
@@ -22,7 +22,7 @@ namespace Porygon.Entity.Manager
         }
     }
 
-    public abstract class EntityManager<T, TModel, TFilter, TDataManager> : EntityManager<T, Guid, TModel, TFilter, TDataManager>
+    public class EntityManager<T, TModel, TFilter, TDataManager> : EntityManager<T, Guid, TModel, TFilter, TDataManager>
            where T : PoryEntity<Guid>
            where TFilter : EntityFilter
            where TModel : T
@@ -33,7 +33,7 @@ namespace Porygon.Entity.Manager
         }
     }
 
-    public abstract class EntityManager<T, TKey, TModel, TFilter, TDataManager> : IEntityManager<T, TKey, TFilter, TModel>
+    public class EntityManager<T, TKey, TModel, TFilter, TDataManager> : IEntityManager<T, TKey, TFilter, TModel>
         where T : PoryEntity<TKey>
         where TFilter : EntityFilter
         where TModel : T
@@ -51,39 +51,38 @@ namespace Porygon.Entity.Manager
         {
             await PreCreateValidation(model);
 
-            var entity = ToEntity(model, true);
+            model.Enrich(true);
 
             using var scope = new TransactionScope();
-            
+
             await PreCreation(model);
-            DataManager.Insert(entity);
+            DataManager.Insert(model);
             await PostCreation(model);
-            
-            return entity;
+
+            return model;
         }
 
         public async Task<T> Update(TModel model)
         {
             await PreUpdateValidation(model);
 
-            var entity = ToEntity(model, false);
+            model.Enrich(false);
 
             using var scope = new TransactionScope();
 
             await PreUpdate(model);
-            DataManager.Update(entity);
+            DataManager.Update(model);
             await PostCreation(model);
 
-            return entity;
+            return model;
         }
 
         public async Task<int> Delete(TKey id)
         {
-            if (id == null || id.Equals(default))
-                return 0;
+            await PreDeleteValidation(id);
 
             using var scope = new TransactionScope();
-            
+
             await PreDeletion(id);
             var result = DataManager.Delete(id);
             await PostDeletion(id);
@@ -139,6 +138,13 @@ namespace Porygon.Entity.Manager
             return Task.CompletedTask;
         }
 
+        protected virtual Task PreDeleteValidation(TKey id)
+        {
+            if (id == null || id.Equals(default))
+                throw new ArgumentException("Id cannot be null");
+            return Task.CompletedTask;
+        }
+
         protected virtual Task PreCreation(TModel model)
         {
             return Task.CompletedTask;
@@ -159,19 +165,20 @@ namespace Porygon.Entity.Manager
             return Task.CompletedTask;
         }
 
-        private Task PreDeletion(TKey id)
+        protected virtual Task PreDeletion(TKey id)
         {
             return Task.CompletedTask;
         }
 
-        private Task PostDeletion(TKey id)
+        protected virtual Task PostDeletion(TKey id)
         {
             return Task.CompletedTask;
         }
 
-        protected abstract T ToEntity(TModel model, bool isNew);
-
-        protected abstract Task<TModel> ToViewModel(T entity);
+        protected virtual Task<TModel> ToViewModel(T entity)
+        {
+            return Task.FromResult((TModel)entity);
+        }
         #endregion
     }
 
