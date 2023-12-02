@@ -3,6 +3,13 @@ using Porygon.Entity.Manager;
 
 namespace Porygon.Entity.Controller
 {
+    public abstract class EntityController : EntityController<PoryEntity, Guid, PoryEntity, EntityFilter, EntityManager>
+    {
+        protected EntityController(EntityManager manager) : base(manager)
+        {
+        }
+    }
+
     public abstract class EntityController<T, TManager> : EntityController<T, Guid, T, EntityFilter, TManager>
         where T : PoryEntity<Guid>
         where TManager : IEntityManager<T, Guid, EntityFilter, T>

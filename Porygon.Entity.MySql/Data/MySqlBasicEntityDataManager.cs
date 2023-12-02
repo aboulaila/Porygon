@@ -2,7 +2,7 @@
 
 namespace Porygon.Entity.MySql.Data
 {
-    public abstract class MySqlBasicEntityDataManager<T> : MySqlBasicEntityDataManager<T, Guid>
+    public class MySqlBasicEntityDataManager<T> : MySqlBasicEntityDataManager<T, Guid>
         where T : class
     {
         protected MySqlBasicEntityDataManager(IFreeSql connection) : base(connection)
@@ -10,7 +10,7 @@ namespace Porygon.Entity.MySql.Data
         }
     }
 
-    public abstract class MySqlBasicEntityDataManager<T, TKey> : IBasicEntityDataManager<T, TKey>
+    public class MySqlBasicEntityDataManager<T, TKey> : IBasicEntityDataManager<T, TKey>
     where T : class
     {
         protected IFreeSql Connection;

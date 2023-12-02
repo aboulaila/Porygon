@@ -17,6 +17,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Porygon.Identity", "Porygon
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Porygon.Identity.MySql", "Porygon.Identity.MySql\Porygon.Identity.MySql.csproj", "{8862F31A-C7E8-4F0D-A156-D05B3EBCF223}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Porygon.App", "Porygon.App\Porygon.App.csproj", "{D89B47BE-1268-4D5D-921C-1B62B90C673A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Porygon.Test", "Porygon.Test\Porygon.Test.csproj", "{21CBD339-150D-45DD-A7E2-AF9E65D55070}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +43,14 @@ Global
 		{8862F31A-C7E8-4F0D-A156-D05B3EBCF223}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8862F31A-C7E8-4F0D-A156-D05B3EBCF223}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8862F31A-C7E8-4F0D-A156-D05B3EBCF223}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D89B47BE-1268-4D5D-921C-1B62B90C673A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D89B47BE-1268-4D5D-921C-1B62B90C673A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D89B47BE-1268-4D5D-921C-1B62B90C673A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D89B47BE-1268-4D5D-921C-1B62B90C673A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{21CBD339-150D-45DD-A7E2-AF9E65D55070}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{21CBD339-150D-45DD-A7E2-AF9E65D55070}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{21CBD339-150D-45DD-A7E2-AF9E65D55070}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{21CBD339-150D-45DD-A7E2-AF9E65D55070}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

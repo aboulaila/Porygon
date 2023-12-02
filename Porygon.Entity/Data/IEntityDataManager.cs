@@ -1,5 +1,9 @@
 ﻿namespace Porygon.Entity.Data
 {
+    public interface IEntityDataManager : IEntityDataManager<PoryEntity, Guid, EntityFilter>        
+    {
+    }
+
     public interface IEntityDataManager<T> : IEntityDataManager<T, Guid, EntityFilter>
         where T : PoryEntity<Guid>
     {

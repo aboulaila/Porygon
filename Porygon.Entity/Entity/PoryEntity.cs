@@ -1,27 +1,34 @@
 ﻿namespace Porygon.Entity
 {
-    public abstract class PoryEntity<TKey>
+    public class PoryEntity<TKey>
     {
-        public TKey Id { get; set; }
-        public string Name { get; set; }
-        public string Title { get; set; }
+        public TKey? Id { get; set; }
+        public string? Name { get; set; }
+        public string? Title { get; set; }
+        public object? LinkedItemId { get; set; }
         public DateTimeOffset DateModified { get; set; }
         public DateTimeOffset DateCreated { get; set; }
         public int TotalRecords { get; set; }
 
-        public abstract void Enrich(bool isNew);
+        public virtual void Enrich(bool isNew)
+        {
+            if (isNew)
+            {
+                DateCreated = DateTimeOffset.UtcNow;
+            }
+            DateModified = DateTimeOffset.UtcNow;
+        }
     }
 
     public class PoryEntity : PoryEntity<Guid>
     {
         public override void Enrich(bool isNew)
         {
+            base.Enrich(isNew);
             if (isNew)
             {
-                Id = Guid.NewGuid();
-                DateCreated = DateTimeOffset.UtcNow;
+                Id = Id.Equals(Guid.Empty) ? Guid.NewGuid() : Id;
             }
-            DateModified = DateTimeOffset.UtcNow;
         }
     }
 }

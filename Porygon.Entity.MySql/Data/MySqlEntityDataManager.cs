@@ -2,24 +2,31 @@
 
 namespace Porygon.Entity.MySql.Data
 {
-    public abstract class MySqlEntityDataManager<T> : MySqlEntityDataManager<T, EntityFilter>
-        where T : PoryEntity
+    public class MySqlEntityDataManager : MySqlEntityDataManager<PoryEntity, EntityFilter>, IEntityDataManager
     {
-        protected MySqlEntityDataManager(IFreeSql connection) : base(connection)
+        public MySqlEntityDataManager(IFreeSql connection) : base(connection)
         {
         }
     }
 
-    public abstract class MySqlEntityDataManager<T, TFilter> : MySqlEntityDataManager<T, Guid, TFilter>
+    public class MySqlEntityDataManager<T> : MySqlEntityDataManager<T, EntityFilter>, IEntityDataManager<T>
+        where T : PoryEntity
+    {
+        public MySqlEntityDataManager(IFreeSql connection) : base(connection)
+        {
+        }
+    }
+
+    public class MySqlEntityDataManager<T, TFilter> : MySqlEntityDataManager<T, Guid, TFilter>, IEntityDataManager<T, TFilter>
         where T : PoryEntity
         where TFilter : EntityFilter
     {
-        protected MySqlEntityDataManager(IFreeSql connection) : base(connection)
+        public MySqlEntityDataManager(IFreeSql connection) : base(connection)
         {
         }
     }
 
-    public abstract class MySqlEntityDataManager<T, TKey, TFilter> : MySqlBasicEntityDataManager<T, TKey>, IEntityDataManager<T, TKey, TFilter>
+    public class MySqlEntityDataManager<T, TKey, TFilter> : MySqlBasicEntityDataManager<T, TKey>, IEntityDataManager<T, TKey, TFilter>
     where T : PoryEntity<TKey>
     where TFilter : EntityFilter
     {
