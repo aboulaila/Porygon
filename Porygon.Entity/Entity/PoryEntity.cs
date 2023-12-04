@@ -1,4 +1,6 @@
-﻿namespace Porygon.Entity
+﻿using Porygon.Entity.Entity;
+
+namespace Porygon.Entity
 {
     public class PoryEntity<TKey>
     {
@@ -9,6 +11,7 @@
         public DateTimeOffset DateModified { get; set; }
         public DateTimeOffset DateCreated { get; set; }
         public int TotalRecords { get; set; }
+        public EntityStates State { get; set; } = EntityStates.UNMODIFIED;
 
         public virtual void Enrich(bool isNew)
         {

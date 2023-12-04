@@ -4,11 +4,7 @@ namespace Porygon.Entity.Entity
 {
     public class HasManyAttribute : RelationshipAttribute
     {
-        public HasManyAttribute()
-        {            
-        }
-
-        public HasManyAttribute(Type manager) : base(manager)
+        public HasManyAttribute(Type? manager = null, bool isCascading = false) : base(manager, isCascading)
         {
         }
     }

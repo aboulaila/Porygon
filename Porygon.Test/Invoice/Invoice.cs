@@ -11,17 +11,17 @@ namespace Porygon.Test.Invoice
         [HasA(typeof(EntityManager<Customer>))]
         public Customer Customer { get; set; }
 
-        [HasMany(typeof(EntityManager<InvoiceItem>))]
+        [HasMany(typeof(EntityManager<InvoiceItem>), true)]
         public List<InvoiceItem> Items { get; set; }
 
-        [HasMany]
+        [HasMany(isCascading: true)]
         public List<PoryEntity> Payments { get; set; }
     }
 
     public class Customer : PoryEntity
     {
         public string Name { get; set; }
-        [HasA]
+        [HasA(isCascading: true)]
         public ContactDetail ContactDetail { get; set; }
     }
 

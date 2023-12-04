@@ -6,13 +6,12 @@ namespace Porygon.Entity.Entity
     public class RelationshipAttribute : Attribute
     {
         public Type? EntityManager { get; set; }
+        public bool IsCascading { get; set; }        
 
-        public RelationshipAttribute()
-        {            
-        }
-        public RelationshipAttribute(Type manager)
+        public RelationshipAttribute(Type? manager, bool isCascading)
         {
             EntityManager = manager;
+            IsCascading = isCascading;
         }
     }
 }

@@ -6,18 +6,19 @@ namespace Porygon.Test
 {
     public static class TestUtils
     {
-        public static void AssertEntityIsInserted<T>(T entity, IEntityDataManager<T> dataManager) where T : PoryEntity
-        {
-            Mock.Get(dataManager).Verify(x => x.Insert(entity), Times.Once);
-        }
-        public static void AssertEntityIsNotInserted<T>(T entity, IEntityDataManager<T> dataManager) where T : PoryEntity
-        {
-            Mock.Get(dataManager).Verify(x => x.Insert(entity), Times.Never);
-        }
-
         public static void AssertIdNotEmpty<T>(T entity) where T : PoryEntity
         {
             Assert.That(entity.Id, Is.Not.EqualTo(Guid.Empty), () => $"{entity.GetType().Name}'s Id is empty");
+        }
+
+        public static void SetupEntityGetter<T>(T entity, Mock<IEntityDataManager<T>> dataManager) where T : PoryEntity
+        {
+            dataManager.Setup(x => x.GetAsync(entity.Id)).Returns(Task.FromResult(entity));
+        }
+
+        public static void SetupEntityGetter(PoryEntity entity, Mock<IEntityDataManager> dataManager)
+        {
+            dataManager.Setup(x => x.GetAsync(entity.Id)).Returns(Task.FromResult(entity));
         }
     }
 }

@@ -15,7 +15,7 @@ namespace Porygon.Entity.Manager
     }
 
     public class EntityManager<T> : EntityManager<T, Guid, T, EntityFilter, IEntityDataManager<T, Guid, EntityFilter>>
-           where T : PoryEntity<Guid>
+           where T : PoryEntity<Guid>, new()
     {
         public EntityManager(IEntityDataManager<T, Guid, EntityFilter> dataManager, IServiceProvider serviceProvider) : base(dataManager, serviceProvider)
         {
@@ -23,7 +23,7 @@ namespace Porygon.Entity.Manager
     }
 
     public class EntityManager<T, TDataManager> : EntityManager<T, Guid, T, EntityFilter, TDataManager>
-           where T : PoryEntity<Guid>
+           where T : PoryEntity<Guid>, new()
            where TDataManager : IEntityDataManager<T, Guid, EntityFilter>
     {
         public EntityManager(TDataManager dataManager, IServiceProvider serviceProvider) : base(dataManager, serviceProvider)
@@ -32,7 +32,7 @@ namespace Porygon.Entity.Manager
     }
 
     public class EntityManager<T, TFilter, TDataManager> : EntityManager<T, Guid, T, TFilter, TDataManager>
-           where T : PoryEntity<Guid>
+           where T : PoryEntity<Guid>, new()
            where TFilter : EntityFilter
            where TDataManager : IEntityDataManager<T, Guid, TFilter>
     {
@@ -42,7 +42,7 @@ namespace Porygon.Entity.Manager
     }
 
     public class EntityManager<T, TModel, TFilter, TDataManager> : EntityManager<T, Guid, TModel, TFilter, TDataManager>
-           where T : PoryEntity<Guid>
+           where T : PoryEntity<Guid>, new()
            where TFilter : EntityFilter
            where TModel : T
            where TDataManager : IEntityDataManager<T, Guid, TFilter>
@@ -53,7 +53,7 @@ namespace Porygon.Entity.Manager
     }
 
     public class EntityManager<T, TKey, TModel, TFilter, TDataManager> : IEntityManager<T, TKey, TFilter, TModel>
-        where T : PoryEntity<TKey>
+        where T : PoryEntity<TKey>, new()
         where TFilter : EntityFilter
         where TModel : T
         where TDataManager : IEntityDataManager<T, TKey, TFilter>
@@ -68,26 +68,6 @@ namespace Porygon.Entity.Manager
         }
 
         #region Public Methods
-        public async Task<TModel?> Get(TKey id)
-        {
-            if (id == null || id.Equals(default))
-                return default;
-
-            var entity = await DataManager.GetAsync(id);
-
-            return await ToViewModel(entity);
-        }
-
-        public async Task<IEnumerable<TModel>> GetAll()
-        {
-            var results = await DataManager.GetAll();
-            if (results != null && results.Any())
-            {
-                return await Task.WhenAll(results.Select(e => ToViewModel(e)));
-            }
-
-            return new List<TModel>();
-        }
 
         public async Task<T?> Create(TModel model)
         {
@@ -96,18 +76,15 @@ namespace Porygon.Entity.Manager
 
         public async Task<T?> Create(TModel model, TransactionScope? scope)
         {
-            bool isValid = await PreCreateValidation(model);
-            if (!isValid)
-                return null;
+            await PreCreateValidation(model);
 
             model.Enrich(true);
 
             var localScope = scope ?? new TransactionScope();
 
-            _ = await PreCreation(model, localScope);
+            await PreCreation(model, localScope);
             DataManager.Insert(model);
-            _ = await PostCreation(model, localScope);
-
+            await PostCreation(model, localScope);
 
             if (scope == null)
                 localScope.Complete();
@@ -135,17 +112,18 @@ namespace Porygon.Entity.Manager
 
         public async Task<T?> Update(TModel model, TransactionScope? scope)
         {
-            bool isValid = await PreUpdateValidation(model);
-            if (!isValid)
-                return null;
+            await PreUpdateValidation(model);
 
             model.Enrich(false);
 
-            using var localScope = new TransactionScope();
+            var localScope = scope ?? new TransactionScope();
 
-            await PreUpdate(model);
+            await PreUpdate(model, localScope);
             DataManager.Update(model);
-            await PostUpdate(model);
+            await PostUpdate(model, localScope);
+
+            if (scope == null)
+                localScope.Complete();
 
             return model;
         }
@@ -157,17 +135,39 @@ namespace Porygon.Entity.Manager
 
         public async Task<int> Delete(TKey id, TransactionScope? scope)
         {
-            bool isValid = await PreDeleteValidation(id);
-            if (!isValid)
-                return -1;
+            var entity = await Get(id);
+            await PreDeleteValidation(entity);
 
-            using var localScope = new TransactionScope();
+            var localScope = scope ?? new TransactionScope();
 
-            await PreDeletion(id);
+            await PreDeletion(entity, localScope);
             var result = DataManager.Delete(id);
-            await PostDeletion(id);
+            await PostDeletion(entity, localScope);
+
+            if (scope == null)
+                localScope.Complete();
 
             return result;
+        }
+        public async Task<TModel?> Get(TKey id)
+        {
+            if (id == null || id.Equals(default))
+                return default;
+
+            var entity = await DataManager.GetAsync(id);
+
+            return await ToViewModel(entity);
+        }
+
+        public async Task<IEnumerable<TModel>> GetAll()
+        {
+            var results = await DataManager.GetAll();
+            if (results != null && results.Any())
+            {
+                return await Task.WhenAll(results.Select(e => ToViewModel(e)));
+            }
+
+            return new List<TModel>();
         }
 
         public async Task<IEnumerable<TModel>> Search(TFilter filter)
@@ -199,87 +199,87 @@ namespace Porygon.Entity.Manager
 
         #region Abstract/Virtual Methods
 
-        protected virtual Task<bool> PreCreateValidation(TModel model)
+        protected virtual Task PreCreateValidation(TModel? model)
         {
-            if (model == null)
-                throw new ArgumentException("Model cannot be null");
-            return Task.FromResult(true);
+            return PreEntityValidation(model);
         }
 
-        protected virtual Task<bool> PreUpdateValidation(TModel model)
+        protected virtual Task PreUpdateValidation(TModel? model)
         {
-            if (model == null)
-                throw new ArgumentException("Model cannot be null");
-            return Task.FromResult(true);
+            return PreEntityValidation(model);
         }
 
-        protected virtual Task<bool> PreDeleteValidation(TKey id)
+        protected virtual Task PreDeleteValidation(TModel? model)
         {
-            if (id == null || id.Equals(default))
-                throw new ArgumentException("Id cannot be null");
-            return Task.FromResult(true);
+            return PreEntityValidation(model);
         }
 
-        protected async Task<object?> PreCreation(TModel model, TransactionScope scope)
+        protected async Task PreCreation(TModel model, TransactionScope scope)
         {
             var relationships = GetRelationships(model, RelationshipType.HasA);
 
             if (Extensions.IsNullOrEmpty(relationships))
-                return null;
+                return;
 
-            List<PoryEntity<TKey>> entities = new();
             foreach (var relationship in relationships)
             {
-                if (relationship.EntityInstance is not PoryEntity<TKey> entity)
-                    throw new InvalidCastException($"EntityInstance related to {model.GetType().Name}, with HasA relationship, is not of type PoryEntity");
-
-                var created = await CreateRelatedEntity(model, relationship, entity, scope);
-                if (created != null)
-                    entities.Add(created);
+                await CheckRelationship(model, scope, relationship, CheckRelatedEntityCreation);
             };
-            return entities;
         }
 
-        protected virtual async Task<object?> PostCreation(TModel model, TransactionScope scope)
+        protected async Task PostCreation(TModel model, TransactionScope scope)
         {
             var relationships = GetRelationships(model, RelationshipType.HasMany);
 
             if (Extensions.IsNullOrEmpty(relationships))
-                return null;
+                return;
 
-            List<PoryEntity<TKey>> entities = new();
             foreach (var relationship in relationships)
             {
-                if (relationship.EntityInstance is not IEnumerable<PoryEntity<TKey>> entityList)
-                    throw new InvalidCastException($"EntityInstance related to {model.GetType().Name}, with HasMany relationship, is not a list of PoryEntity");
-
-                foreach (var entity in entityList)
-                {
-                    var created = await CreateRelatedEntity(model, relationship, entity, scope);
-                    if (created != null)
-                        entities.Add(created);
-                }
+                await CheckRelationship(model, scope, relationship, CheckRelatedEntityCreation);
             }
-
-            return entities;
         }
 
-        protected virtual Task PreUpdate(TModel model)
+        protected async Task PreUpdate(TModel model, TransactionScope scope)
         {
-            return Task.CompletedTask;
+            var relationships = GetRelationships(model, RelationshipType.HasA);
+
+            if (Extensions.IsNullOrEmpty(relationships))
+                return;
+
+            foreach (var relationship in relationships)
+            {
+                await CheckRelationship(model, scope, relationship, CheckRelatedEntityState);
+            }
         }
 
-        protected virtual Task PostUpdate(TModel model)
+        protected async Task PostUpdate(TModel model, TransactionScope scope)
         {
-            return Task.CompletedTask;
+            var relationships = GetRelationships(model, RelationshipType.HasMany);
+
+            if (Extensions.IsNullOrEmpty(relationships))
+                return;
+
+            foreach (var relationship in relationships)
+            {
+                await CheckRelationship(model, scope, relationship, CheckRelatedEntityState);
+            }
         }
 
-        protected virtual Task PreDeletion(TKey id)
+        protected async Task PreDeletion(TModel model, TransactionScope scope)
         {
-            return Task.CompletedTask;
+            var relationships = GetRelationships(model, cascading: true);
+
+            if (Extensions.IsNullOrEmpty(relationships))
+                return;
+
+            foreach (var relationship in relationships)
+            {
+                await CheckRelationship(model, scope, relationship, CheckCascadingEntityDeletion);
+            }
         }
 
-        protected virtual Task PostDeletion(TKey id)
+        protected virtual Task PostDeletion(TModel model, TransactionScope scope)
         {
             return Task.CompletedTask;
         }
@@ -290,7 +290,50 @@ namespace Porygon.Entity.Manager
         }
         #endregion
 
-        private List<Relationship>? GetRelationships(T entity, RelationshipType relationshipType)
+        private static Task PreEntityValidation(TModel? model)
+        {
+            if (model == null || model.Id == null)
+                throw new ArgumentException("Id cannot be null");
+            return Task.CompletedTask;
+        }
+
+        private static async Task CheckRelationship(TModel model, TransactionScope scope, Relationship relationship, Func<TModel, Relationship, PoryEntity<TKey>, TransactionScope, Task> relationshipHandler)
+        {
+            var entityList = GetRelatedEntities(model, relationship);
+            foreach (var entity in entityList)
+            {
+                await relationshipHandler(model, relationship, entity, scope);
+            }
+        }
+
+        private static List<PoryEntity<TKey>> GetRelatedEntities(TModel model, Relationship relationship)
+        {
+            if (Equals(relationship.Type, RelationshipType.HasA))
+            {
+                PoryEntity<TKey> entity = GetEntityInstance(model, relationship);             
+                return new List<PoryEntity<TKey>>() { entity };
+            }
+            else
+            {
+                return GetEntityListInstance(model, relationship);
+            }
+        }
+
+        private static PoryEntity<TKey> GetEntityInstance(TModel model, Relationship relationship)
+        {
+            if (relationship.EntityInstance is not PoryEntity<TKey> entity)
+                throw new InvalidCastException($"EntityInstance related to {model.GetType().Name}, with HasA relationship, is not of type PoryEntity");
+            return entity;
+        }
+
+        private static List<PoryEntity<TKey>> GetEntityListInstance(TModel model, Relationship relationship)
+        {
+            if (relationship.EntityInstance is not IEnumerable<PoryEntity<TKey>> entityList)
+                throw new InvalidCastException($"EntityInstance related to {model.GetType().Name}, with HasMany relationship, is not a list of PoryEntity");
+            return entityList.ToList();
+        }
+
+        private List<Relationship>? GetRelationships(T entity, RelationshipType? relationshipType = null, bool cascading = false)
         {
             var properties = entity.GetType().GetProperties().Where(p => HasTheDesiredAttribute(p, relationshipType));
             if (Extensions.IsNullOrEmpty(properties))
@@ -300,6 +343,9 @@ namespace Porygon.Entity.Manager
             foreach (var property in properties)
             {
                 RelationshipAttribute attribute = property.GetCustomAttribute<RelationshipAttribute>();
+                if (cascading && !attribute.IsCascading)
+                    continue;
+
                 IEntityManager entityManager = GetEntityManagerInstance(property, attribute);
                 object? relatedEntityInstance = GetRelatedEntityInstance(entity, property);
                 if (relatedEntityInstance == null)
@@ -318,18 +364,58 @@ namespace Porygon.Entity.Manager
             return relationships;
         }
 
-        private static async Task<PoryEntity<TKey>> CreateRelatedEntity(TModel model, Relationship relationship, PoryEntity<TKey> entity, TransactionScope scope)
+        private static async Task CheckRelatedEntityState(TModel model, Relationship relationship, PoryEntity<TKey> entity, TransactionScope scope)
         {
-            if (HasNoId(entity.Id))
+            if (ShouldCreateEntity(entity))
             {
-                entity.LinkedItemId = model.Id;
-                return (PoryEntity<TKey>)(await relationship.EntityManager.Create(entity, scope) ?? throw new Exception($"Failed to create {entity.GetType()}"));
+                await CreateRelatedEntity(model, relationship, entity, scope);
             }
-            return null;
+            else if (Equals(entity.State, EntityStates.UPDATED))
+            {
+                await UpdateRelatedEntity(relationship, entity, scope);
+            }
+            else if (Equals(entity.State, EntityStates.DELETED))
+            {
+                await DeleteRelatedEntity(relationship, entity.Id, scope);
+            }
         }
 
-        private static bool HasTheDesiredAttribute(PropertyInfo property, RelationshipType relationshipType)
+        private static async Task CheckRelatedEntityCreation(TModel model, Relationship relationship, PoryEntity<TKey> entity, TransactionScope scope)
         {
+            if (ShouldCreateEntity(entity))
+            {
+                await CreateRelatedEntity(model, relationship, entity, scope);
+            }
+        }
+
+        private static async Task CheckCascadingEntityDeletion(TModel model, Relationship relationship, PoryEntity<TKey> entity, TransactionScope scope)
+        {
+            await DeleteRelatedEntity(relationship, entity.Id, scope);
+        }
+
+        private static async Task CreateRelatedEntity(TModel model, Relationship relationship, PoryEntity<TKey> entity, TransactionScope scope)
+        {
+            entity.LinkedItemId = model.Id;
+            _ = await relationship.EntityManager.Create(entity, scope) ?? throw new Exception($"Failed to create {entity.GetType()}");
+        }
+
+        private static async Task UpdateRelatedEntity(Relationship relationship, PoryEntity<TKey> entity, TransactionScope scope)
+        {
+            _ = await relationship.EntityManager.Update(entity, scope) ?? throw new Exception($"Failed to update {entity.GetType()}");
+        }
+
+        private static async Task DeleteRelatedEntity(Relationship relationship, TKey id, TransactionScope scope)
+        {
+            bool isDeleted = await relationship.EntityManager.Delete(id, scope) > 0;
+            if (!isDeleted)
+                throw new Exception($"Failed to delete entity with ID: {id}");
+        }
+
+        private static bool HasTheDesiredAttribute(PropertyInfo property, RelationshipType? relationshipType)
+        {
+            if (relationshipType == null)
+                return property.GetCustomAttribute<RelationshipAttribute>() != null;
+
             RelationshipAttribute? desiredAttribute = relationshipType.Equals(RelationshipType.HasA) ?
                 property.GetCustomAttribute<HasAAttribute>() :
                 property.GetCustomAttribute<HasManyAttribute>();
@@ -376,6 +462,11 @@ namespace Porygon.Entity.Manager
         private static object? GetRelatedEntityInstance(T entity, PropertyInfo property)
         {
             return property.GetValue(entity);
+        }
+
+        private static bool ShouldCreateEntity(PoryEntity<TKey> entity)
+        {
+            return entity?.State == EntityStates.NEW || HasNoId(entity.Id);
         }
 
         private static bool HasNoId(TKey id)

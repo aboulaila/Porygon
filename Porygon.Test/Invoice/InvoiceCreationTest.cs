@@ -81,13 +81,26 @@ namespace Porygon.Test.Invoice
             });
 
             Mock.Get(PaymentDataManager).Verify(x => x.Insert(It.IsAny<PoryEntity>()), Times.Exactly(3));
-            TestUtils.AssertEntityIsInserted(invoice, InvoiceDataManager);
-            TestUtils.AssertEntityIsInserted(customer, CustomerDataManager);
-            TestUtils.AssertEntityIsInserted(invoiceItem, InvoiceItemDataManager);
-            TestUtils.AssertEntityIsNotInserted(contactDetail, ContactDetailDataManager);
-            TestUtils.AssertEntityIsNotInserted(product, ProductDataManager);
+            Mock.Get(InvoiceDataManager).Verify(x => x.Insert(invoice), Times.Once);
+            Mock.Get(CustomerDataManager).Verify(x => x.Insert(customer), Times.Once);
+            Mock.Get(InvoiceItemDataManager).Verify(x => x.Insert(invoiceItem), Times.Once);
+            Mock.Get(ContactDetailDataManager).Verify(x => x.Insert(contactDetail), Times.Never);
+            Mock.Get(ProductDataManager).Verify(x => x.Insert(product), Times.Never);
         }
 
+        [Test]
+        public async Task Test2()
+        {
+            var payments = new List<ContactDetail> { new ContactDetail(), new ContactDetail(), new ContactDetail() };
+            await ContactDetailManager.CreateBulk(payments);
+            Mock.Get(ContactDetailDataManager).Verify(x => x.Insert(It.IsAny<ContactDetail>()), Times.Exactly(3));
+        }
+
+        [Test]
+        public void Test3()
+        {
+            Assert.ThrowsAsync<ArgumentException>(async () => await InvoiceManager.Create(null));
+        }
 
 
         private void MockServiceProvider(Mock<IServiceProvider> serviceProvider)
