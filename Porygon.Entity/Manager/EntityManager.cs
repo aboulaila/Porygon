@@ -1,5 +1,6 @@
 ﻿using Porygon.Entity.Data;
 using Porygon.Entity.Relationships;
+using System.Reflection;
 using System.Transactions;
 
 namespace Porygon.Entity.Manager
@@ -136,9 +137,11 @@ namespace Porygon.Entity.Manager
 
             var localScope = GetTransactionScope(scope);
 
-            await PreCreation(model, localScope);
+            await VisitRelationships(model, localScope, CheckRelatedEntityCreation, RelationshipType.HasA);
+            await PreCreation(model);
             DataManager.Insert(model);
-            await PostCreation(model, localScope);
+            await VisitRelationships(model, localScope, CheckRelatedEntityCreation, RelationshipType.HasMany);
+            await PostCreation(model);
 
             CompleteTransactionScope(scope, localScope);
 
@@ -154,9 +157,11 @@ namespace Porygon.Entity.Manager
 
             var localScope = GetTransactionScope(scope);
 
-            await PreUpdate(model, localScope);
+            await VisitRelationships(model, localScope, CheckRelatedEntityState, RelationshipType.HasA);
+            await PreUpdate(model);
             DataManager.Update(model);
-            await PostUpdate(model, localScope);
+            await VisitRelationships(model, localScope, CheckRelatedEntityState, RelationshipType.HasMany);  
+            await PostUpdate(model);
 
             CompleteTransactionScope(scope, localScope);
 
@@ -171,9 +176,10 @@ namespace Porygon.Entity.Manager
 
             var localScope = GetTransactionScope(scope);
 
-            await PreDeletion(entity!, localScope);
+            await VisitRelationships(entity!, localScope, CheckCascadingEntityDeletion, isCascading: true);
+            await PreDeletion(entity!);
             var result = DataManager.Delete(id);
-            await PostDeletion(entity!, localScope);
+            await PostDeletion(entity!);
 
             CompleteTransactionScope(scope, localScope);
 
@@ -246,32 +252,32 @@ namespace Porygon.Entity.Manager
             return Task.CompletedTask;
         }
 
-        protected async Task PreCreation(TModel model, TransactionScope scope)
+        protected virtual Task PreCreation(TModel model)
         {
-            await VisitRelationships(model, scope, CheckRelatedEntityCreation, RelationshipType.HasA);
+            return Task.CompletedTask;
         }
 
-        protected async Task PostCreation(TModel model, TransactionScope scope)
+        protected virtual Task PostCreation(TModel model)
         {
-            await VisitRelationships(model, scope, CheckRelatedEntityCreation, RelationshipType.HasMany);
+            return Task.CompletedTask;
         }
 
-        protected async Task PreUpdate(TModel model, TransactionScope scope)
+        protected virtual Task PreUpdate(TModel model)
         {
-            await VisitRelationships(model, scope, CheckRelatedEntityState, RelationshipType.HasA);
+            return Task.CompletedTask;
         }
 
-        protected async Task PostUpdate(TModel model, TransactionScope scope)
+        protected virtual Task PostUpdate(TModel model)
         {
-            await VisitRelationships(model, scope, CheckRelatedEntityState, RelationshipType.HasMany);
+            return Task.CompletedTask;
         }
 
-        protected async Task PreDeletion(TModel model, TransactionScope scope)
+        protected virtual Task PreDeletion(TModel model)
         {
-            await VisitRelationships(model, scope, CheckCascadingEntityDeletion, isCascading: true);
+            return Task.CompletedTask;
         }
 
-        protected virtual Task PostDeletion(TModel model, TransactionScope scope)
+        protected virtual Task PostDeletion(TModel model)
         {
             return Task.CompletedTask;
         }
