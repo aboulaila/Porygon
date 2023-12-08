@@ -8,10 +8,12 @@ namespace Porygon.Test.Invoice
     {
         public string Code { get; set; }
 
-        [HasA(typeof(EntityManager<Customer>))]
+        public Guid CustomerId { get; set; }
+
+        [HasA(entityIdProperty: nameof(CustomerId), manager: typeof(EntityManager<Customer>))]
         public Customer Customer { get; set; }
 
-        [HasMany(typeof(EntityManager<InvoiceItem>), true)]
+        [HasMany(manager: typeof(EntityManager<InvoiceItem>), isCascading: true)]
         public List<InvoiceItem> Items { get; set; }
 
         [HasMany(isCascading: true)]
@@ -21,6 +23,9 @@ namespace Porygon.Test.Invoice
     public class Customer : PoryEntity
     {
         public string Name { get; set; }
+
+        public Guid ContactDetailId { get; set; }
+
         [HasA(isCascading: true)]
         public ContactDetail ContactDetail { get; set; }
     }
@@ -32,6 +37,7 @@ namespace Porygon.Test.Invoice
 
     public class InvoiceItem : PoryEntity
     {
+        public Guid ProductId { get; set; }
         [HasA]
         public Product Product { get; set; }
     }

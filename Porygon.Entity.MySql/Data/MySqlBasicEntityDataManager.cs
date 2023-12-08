@@ -30,7 +30,7 @@ namespace Porygon.Entity.MySql.Data
             return await Connection.Select<T>(id).FirstAsync();
         }
 
-        public async Task<IEnumerable<T>> GetAll()
+        public async Task<List<T>> GetAll()
         {
             return await Connection.Select<T>().ToListAsync();
         }

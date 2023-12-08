@@ -27,8 +27,8 @@ namespace Porygon.Entity.MySql.Data
     }
 
     public class MySqlEntityDataManager<T, TKey, TFilter> : MySqlBasicEntityDataManager<T, TKey>, IEntityDataManager<T, TKey, TFilter>
-    where T : PoryEntity<TKey>
-    where TFilter : EntityFilter
+        where T : PoryEntity<TKey>
+        where TFilter : EntityFilter<TKey>
     {
         public MySqlEntityDataManager(IFreeSql connection) : base(connection)
         {
@@ -41,14 +41,14 @@ namespace Porygon.Entity.MySql.Data
                 .FirstAsync();
         }
 
-        public async Task<IEnumerable<T>> GetMany(List<TKey> ids)
+        public async Task<List<T>> GetMany(List<TKey> ids)
         {
             return await Connection.Select<T>()
                 .Where(a => ids.Contains(a.Id))
                 .ToListAsync();
         }
 
-        public async virtual Task<IEnumerable<T>> Search(TFilter filter)
+        public async virtual Task<List<T>> Search(TFilter filter)
         {
             return await Connection.Select<T>(filter)
                 .Where(e =>

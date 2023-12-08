@@ -7,7 +7,7 @@
 
         Task<T> GetAsync(TKey id);
 
-        Task<IEnumerable<T>> GetAll();
+        Task<List<T>> GetAll();
 
         int Insert(T entity);
 

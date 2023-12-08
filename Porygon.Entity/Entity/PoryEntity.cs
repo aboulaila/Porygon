@@ -21,6 +21,11 @@ namespace Porygon.Entity
             }
             DateModified = DateTimeOffset.UtcNow;
         }
+
+        public virtual TModel ToViewModel<TModel>() where TModel : PoryEntity<TKey>
+        {
+            return (TModel)this;
+        }
     }
 
     public class PoryEntity : PoryEntity<Guid>

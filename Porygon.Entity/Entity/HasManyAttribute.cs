@@ -1,10 +1,8 @@
-﻿using Porygon.Entity.Manager;
-
-namespace Porygon.Entity.Entity
+﻿namespace Porygon.Entity.Entity
 {
     public class HasManyAttribute : RelationshipAttribute
     {
-        public HasManyAttribute(Type? manager = null, bool isCascading = false) : base(manager, isCascading)
+        public HasManyAttribute(string? entityIdProperty = null, Type? manager = null, bool isCascading = false) : base(entityIdProperty, manager, isCascading)
         {
         }
     }

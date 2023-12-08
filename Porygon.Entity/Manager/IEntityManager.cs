@@ -7,18 +7,23 @@ namespace Porygon.Entity.Manager
         Task<object?> Create(object model, TransactionScope scope);
         Task<object?> Update(object model, TransactionScope scope);
         Task<int> Delete(object id, TransactionScope scope);
+        Task<object?> Get(object id);
+        Task<IEnumerable<object?>> GetByLinkedItemId(object id);
     }
 
     public interface IEntityManager<T, TKey, TFilter, TModel> : IEntityManager
         where T : PoryEntity<TKey>
-        where TFilter : EntityFilter
+        where TFilter : EntityFilter<TKey>
         where TModel : T
     {
         Task<T?> Create(TModel model);
         Task<T?> Update(TModel model);
         Task<int> Delete(TKey id);
-        Task<IEnumerable<TModel>> GetAll();
         Task<TModel?> Get(TKey id);
-        Task<IEnumerable<TModel>> Search(TFilter filter);
+        Task<TModel?> GetEnriched(TKey id);
+        Task<List<TModel>> GetAll();
+        Task<List<TModel>> GetAllEnriched();
+        Task<List<TModel>> Search(TFilter filter);
+        Task<List<TModel>> SearchEnriched(TFilter filter);
     }
 }

@@ -5,24 +5,24 @@
     }
 
     public interface IEntityDataManager<T> : IEntityDataManager<T, Guid, EntityFilter>
-        where T : PoryEntity<Guid>
+        where T : PoryEntity
     {
     }
 
     public interface IEntityDataManager<T, TFilter> : IEntityDataManager<T, Guid, TFilter>
-        where T : PoryEntity<Guid>
+        where T : PoryEntity
         where TFilter : EntityFilter
     {
     }
  
     public interface IEntityDataManager<T, TKey, TFilter> : IBasicEntityDataManager<T, TKey>
         where T : PoryEntity<TKey>
-        where TFilter : EntityFilter
+        where TFilter : EntityFilter<TKey>
     {
-        Task<IEnumerable<T>> Search(TFilter filter);
+        Task<List<T>> Search(TFilter filter);
 
         Task<T> GetByName(string name);
 
-        Task<IEnumerable<T>> GetMany(List<TKey> ids);
+        Task<List<T>> GetMany(List<TKey> ids);
     }
 }
