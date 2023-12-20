@@ -142,7 +142,7 @@ namespace Porygon.Entity.Controller
         }
 
 
-        [HttpGet("{id?}")]
+        [HttpGet("lite/{id?}")]
         public async Task<IActionResult> GetLite(TKey id)
         {
             try
@@ -156,7 +156,7 @@ namespace Porygon.Entity.Controller
             }
         }
 
-        [HttpGet]
+        [HttpGet("lite")]
         public async Task<IActionResult> GetLite()
         {
             try
@@ -170,7 +170,7 @@ namespace Porygon.Entity.Controller
             }
         }
 
-        [HttpPost("search")]
+        [HttpPost("search/lite")]
         public async Task<IActionResult> SearchLite(TFilter filter)
         {
             try
