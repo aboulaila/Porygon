@@ -291,6 +291,14 @@ namespace Porygon.Entity.Manager
                 await EnrichRelatedEntities(entity, relationship);
             }
         }
+
+        protected virtual TransactionScope CreateTransactionScope()
+        {
+            return new(TransactionScopeOption.Required, new TransactionOptions()
+            {
+                IsolationLevel = IsolationLevel.ReadCommitted
+            }, TransactionScopeAsyncFlowOption.Enabled);
+        }
         #endregion
     }
 

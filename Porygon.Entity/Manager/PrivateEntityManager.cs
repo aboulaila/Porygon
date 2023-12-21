@@ -314,13 +314,5 @@ namespace Porygon.Entity.Manager
                 return obj == default;
             return true;
         }
-
-        private static TransactionScope CreateTransactionScope()
-        {
-            return new(TransactionScopeOption.RequiresNew, new TransactionOptions()
-            {
-                IsolationLevel = IsolationLevel.ReadCommitted
-            }, TransactionScopeAsyncFlowOption.Enabled);
-        }
     }
 }
