@@ -68,10 +68,10 @@ namespace Porygon.Entity.Manager
 
         public async Task<T?> Create(TModel model)
         {
-            using (TransactionScope scope = CreateTransactionScope())
-            {
-                return await CreateInternal(model);
-            }
+            using TransactionScope scope = CreateTransactionScope();
+            T? result = await CreateInternal(model);
+            scope.Complete();
+            return result;
         }
 
         public async Task<List<T>> CreateBulk(List<TModel> models)
