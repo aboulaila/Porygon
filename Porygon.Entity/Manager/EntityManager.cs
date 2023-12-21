@@ -68,7 +68,7 @@ namespace Porygon.Entity.Manager
 
         public async Task<T?> Create(TModel model)
         {
-            using (TransactionScope scope = new(TransactionScopeOption.RequiresNew))
+            using (TransactionScope scope = CreateTransactionScope())
             {
                 return await CreateInternal(model);
             }
@@ -78,7 +78,7 @@ namespace Porygon.Entity.Manager
         {
             var entities = new List<T>();
 
-            using (TransactionScope scope = new(TransactionScopeOption.RequiresNew))
+            using (TransactionScope scope = CreateTransactionScope())
             {
                 foreach (var model in models)
                 {
@@ -91,7 +91,7 @@ namespace Porygon.Entity.Manager
 
         public async Task<T?> Update(TModel model)
         {
-            using (TransactionScope scope = new(TransactionScopeOption.RequiresNew))
+            using (TransactionScope scope = CreateTransactionScope())
             {
                 return await UpdateInternal(model);
             }
@@ -99,7 +99,7 @@ namespace Porygon.Entity.Manager
 
         public async Task<int> Delete(TKey id)
         {
-            using (TransactionScope scope = new(TransactionScopeOption.RequiresNew))
+            using (TransactionScope scope = CreateTransactionScope())
             {
                 return await DeleteInternal(id);
             }
