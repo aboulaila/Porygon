@@ -7,9 +7,9 @@ namespace Porygon.Entity
         public TKey? Id { get; set; }
         public string? Name { get; set; }
         public string? Title { get; set; }
-        public object? LinkedItemId { get; set; }
-        public DateTimeOffset DateModified { get; set; }
-        public DateTimeOffset DateCreated { get; set; }
+        public TKey? LinkedItemId { get; set; }
+        public DateTimeOffset? DateModified { get; set; }
+        public DateTimeOffset? DateCreated { get; set; }
         public int TotalRecords { get; set; }
         public EntityStates State { get; set; } = EntityStates.UNMODIFIED;
 

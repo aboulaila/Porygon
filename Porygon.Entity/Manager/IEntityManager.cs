@@ -4,9 +4,9 @@ namespace Porygon.Entity.Manager
 {
     public interface IEntityManager
     {
-        Task<object?> Create(object model, TransactionScope scope);
-        Task<object?> Update(object model, TransactionScope scope);
-        Task<int> Delete(object id, TransactionScope scope);
+        Task<object?> Create(object model);
+        Task<object?> Update(object model);
+        Task<int> Delete(object id);
         Task<object?> Get(object id);
         Task<IEnumerable<object?>> GetByLinkedItemId(object id);
     }

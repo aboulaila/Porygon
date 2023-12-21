@@ -41,7 +41,7 @@ namespace Porygon.Entity.Manager
                 throw new ArgumentException("Id cannot be null");
         }
 
-        private async Task VisitRelationships(TModel model, TransactionScope scope, Func<TModel, Relationship, PoryEntity<TKey>, TransactionScope, Task> relationshipHandler, RelationshipType? relationshipType = null, bool isCascading = false)
+        private async Task VisitRelationships(TModel model, Func<TModel, Relationship, PoryEntity<TKey>, Task> relationshipHandler, RelationshipType? relationshipType = null, bool isCascading = false)
         {
             var relationships = GetRelationships(model, relationshipType, isCascading);
 
@@ -52,46 +52,46 @@ namespace Porygon.Entity.Manager
             {
                 if (relationship == null)
                     continue;
-                await VisitRelationship(model, scope, relationship, relationshipHandler);
+                await VisitRelationship(model, relationship, relationshipHandler);
             }
         }
 
-        private static async Task VisitRelationship(TModel model, TransactionScope scope, Relationship relationship, Func<TModel, Relationship, PoryEntity<TKey>, TransactionScope, Task> relationshipHandler)
+        private static async Task VisitRelationship(TModel model, Relationship relationship, Func<TModel, Relationship, PoryEntity<TKey>, Task> relationshipHandler)
         {
             var entityList = GetRelatedEntities(model, relationship);
             foreach (var entity in entityList)
             {
-                await relationshipHandler(model, relationship, entity, scope);
+                await relationshipHandler(model, relationship, entity);
             }
         }
 
-        private static async Task CheckRelatedEntityState(TModel model, Relationship relationship, PoryEntity<TKey> entity, TransactionScope scope)
+        private static async Task CheckRelatedEntityState(TModel model, Relationship relationship, PoryEntity<TKey> entity)
         {
             if (ShouldCreateEntity(entity))
             {
-                await CreateRelatedEntity(model, relationship, entity, scope);
+                await CreateRelatedEntity(model, relationship, entity);
             }
             else if (Equals(entity.State, EntityStates.UPDATED))
             {
-                await UpdateRelatedEntity(relationship, entity, scope);
+                await UpdateRelatedEntity(relationship, entity);
             }
             else if (Equals(entity.State, EntityStates.DELETED))
             {
-                await DeleteRelatedEntity(relationship, entity.Id!, scope);
+                await DeleteRelatedEntity(relationship, entity.Id!);
             }
         }
 
-        private static async Task CheckRelatedEntityCreation(TModel model, Relationship relationship, PoryEntity<TKey> entity, TransactionScope scope)
+        private static async Task CheckRelatedEntityCreation(TModel model, Relationship relationship, PoryEntity<TKey> entity)
         {
             if (ShouldCreateEntity(entity))
             {
-                await CreateRelatedEntity(model, relationship, entity, scope);
+                await CreateRelatedEntity(model, relationship, entity);
             }
         }
 
-        private static async Task CheckCascadingEntityDeletion(TModel model, Relationship relationship, PoryEntity<TKey> entity, TransactionScope scope)
+        private static async Task CheckCascadingEntityDeletion(TModel model, Relationship relationship, PoryEntity<TKey> entity)
         {
-            await DeleteRelatedEntity(relationship, entity.Id!, scope);
+            await DeleteRelatedEntity(relationship, entity.Id!);
         }
 
         private List<Relationship> GetRelationships(T entity, RelationshipType? relationshipType = null, bool cascading = false)
@@ -181,20 +181,20 @@ namespace Porygon.Entity.Manager
             return entityList.FilterNulls();
         }
 
-        private static async Task CreateRelatedEntity(TModel model, Relationship relationship, PoryEntity<TKey> entity, TransactionScope scope)
+        private static async Task CreateRelatedEntity(TModel model, Relationship relationship, PoryEntity<TKey> entity)
         {
             entity.LinkedItemId = model.Id;
-            _ = await relationship.EntityManager!.Create(entity, scope) ?? throw new Exception($"Failed to create {entity.GetType()}");
+            _ = await relationship.EntityManager!.Create(entity) ?? throw new Exception($"Failed to create {entity.GetType()}");
         }
 
-        private static async Task UpdateRelatedEntity(Relationship relationship, PoryEntity<TKey> entity, TransactionScope scope)
+        private static async Task UpdateRelatedEntity(Relationship relationship, PoryEntity<TKey> entity)
         {
-            _ = await relationship.EntityManager!.Update(entity, scope) ?? throw new Exception($"Failed to update {entity.GetType()}");
+            _ = await relationship.EntityManager!.Update(entity) ?? throw new Exception($"Failed to update {entity.GetType()}");
         }
 
-        private static async Task DeleteRelatedEntity(Relationship relationship, TKey id, TransactionScope scope)
+        private static async Task DeleteRelatedEntity(Relationship relationship, TKey id)
         {
-            bool isDeleted = await relationship.EntityManager!.Delete(id!, scope) > 0;
+            bool isDeleted = await relationship.EntityManager!.Delete(id!) > 0;
             if (!isDeleted)
                 throw new Exception($"Failed to delete entity with ID: {id}");
         }
@@ -313,17 +313,6 @@ namespace Porygon.Entity.Manager
             else if (id is object obj)
                 return obj == default;
             return true;
-        }
-
-        private static TransactionScope GetTransactionScope(TransactionScope? scope)
-        {
-            return scope ?? new TransactionScope();
-        }
-
-        private static void CompleteTransactionScope(TransactionScope? scope, TransactionScope localScope)
-        {
-            if (scope == null)
-                localScope.Complete();
         }
     }
 }

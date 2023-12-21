@@ -1,6 +1,5 @@
 ﻿using Porygon.Entity.Data;
 using Porygon.Entity.Relationships;
-using System.Reflection;
 using System.Transactions;
 
 namespace Porygon.Entity.Manager
@@ -12,17 +11,17 @@ namespace Porygon.Entity.Manager
         }
     }
 
-    public class EntityManager<T> : EntityManager<T, Guid, T, EntityFilter, IEntityDataManager<T, Guid, EntityFilter>>
-           where T : PoryEntity<Guid>, new()
+    public class EntityManager<T> : EntityManager<T, Guid, T, EntityFilter, IEntityDataManager<T>>
+           where T : PoryEntity, new()
     {
-        public EntityManager(IEntityDataManager<T, Guid, EntityFilter> dataManager, IServiceProvider serviceProvider) : base(dataManager, serviceProvider)
+        public EntityManager(IEntityDataManager<T> dataManager, IServiceProvider serviceProvider) : base(dataManager, serviceProvider)
         {
         }
     }
 
     public class EntityManager<T, TDataManager> : EntityManager<T, Guid, T, EntityFilter, TDataManager>
-           where T : PoryEntity<Guid>, new()
-           where TDataManager : IEntityDataManager<T, Guid, EntityFilter>
+           where T : PoryEntity, new()
+           where TDataManager : IEntityDataManager<T>
     {
         public EntityManager(TDataManager dataManager, IServiceProvider serviceProvider) : base(dataManager, serviceProvider)
         {
@@ -30,9 +29,9 @@ namespace Porygon.Entity.Manager
     }
 
     public class EntityManager<T, TFilter, TDataManager> : EntityManager<T, Guid, T, TFilter, TDataManager>
-           where T : PoryEntity<Guid>, new()
+           where T : PoryEntity, new()
            where TFilter : EntityFilter, new()
-           where TDataManager : IEntityDataManager<T, Guid, TFilter>
+           where TDataManager : IEntityDataManager<T, TFilter>
     {
         public EntityManager(TDataManager dataManager, IServiceProvider serviceProvider) : base(dataManager, serviceProvider)
         {
@@ -40,10 +39,10 @@ namespace Porygon.Entity.Manager
     }
 
     public class EntityManager<T, TModel, TFilter, TDataManager> : EntityManager<T, Guid, TModel, TFilter, TDataManager>
-           where T : PoryEntity<Guid>, new()
+           where T : PoryEntity, new()
            where TFilter : EntityFilter, new()
            where TModel : T
-           where TDataManager : IEntityDataManager<T, Guid, TFilter>
+           where TDataManager : IEntityDataManager<T, TFilter>
     {
         public EntityManager(TDataManager dataManager, IServiceProvider serviceProvider) : base(dataManager, serviceProvider)
         {
@@ -69,30 +68,41 @@ namespace Porygon.Entity.Manager
 
         public async Task<T?> Create(TModel model)
         {
-            return await CreateInternal(model, null);
+            using (TransactionScope scope = new(TransactionScopeOption.RequiresNew))
+            {
+                return await CreateInternal(model);
+            }
         }
 
         public async Task<List<T>> CreateBulk(List<TModel> models)
         {
             var entities = new List<T>();
 
-            foreach (var model in models)
+            using (TransactionScope scope = new(TransactionScopeOption.RequiresNew))
             {
-                var entity = await Create(model);
-                entities.Add(entity);
+                foreach (var model in models)
+                {
+                    var entity = await Create(model);
+                    entities.Add(entity);
+                }
             }
-
             return entities;
         }
 
         public async Task<T?> Update(TModel model)
         {
-            return await UpdateInternal(model, null);
+            using (TransactionScope scope = new(TransactionScopeOption.RequiresNew))
+            {
+                return await UpdateInternal(model);
+            }
         }
 
         public async Task<int> Delete(TKey id)
         {
-            return await DeleteInternal(id, null);
+            using (TransactionScope scope = new(TransactionScopeOption.RequiresNew))
+            {
+                return await DeleteInternal(id);
+            }
         }
 
         public async Task<TModel?> GetEnriched(TKey id)
@@ -128,60 +138,47 @@ namespace Porygon.Entity.Manager
 
         #region Internal Functions
 
-        protected async Task<T?> CreateInternal(TModel model, TransactionScope? scope)
+        protected async Task<T?> CreateInternal(TModel model)
         {
             PreEntityValidation(model);
             await PreCreateValidation(model);
 
             model.Enrich(true);
 
-            var localScope = GetTransactionScope(scope);
-
-            await VisitRelationships(model, localScope, CheckRelatedEntityCreation, RelationshipType.HasA);
+            await VisitRelationships(model, CheckRelatedEntityCreation, RelationshipType.HasA);
             await PreCreation(model);
             DataManager.Insert(model);
-            await VisitRelationships(model, localScope, CheckRelatedEntityCreation, RelationshipType.HasMany);
+            await VisitRelationships(model, CheckRelatedEntityCreation, RelationshipType.HasMany);
             await PostCreation(model);
-
-            CompleteTransactionScope(scope, localScope);
 
             return model;
         }
 
-        protected async Task<T?> UpdateInternal(TModel model, TransactionScope? scope)
+        protected async Task<T?> UpdateInternal(TModel model)
         {
             PreEntityValidation(model);
             await PreUpdateValidation(model);
 
             model.Enrich(false);
 
-            var localScope = GetTransactionScope(scope);
-
-            await VisitRelationships(model, localScope, CheckRelatedEntityState, RelationshipType.HasA);
+            await VisitRelationships(model, CheckRelatedEntityState, RelationshipType.HasA);
             await PreUpdate(model);
             DataManager.Update(model);
-            await VisitRelationships(model, localScope, CheckRelatedEntityState, RelationshipType.HasMany);  
+            await VisitRelationships(model, CheckRelatedEntityState, RelationshipType.HasMany);
             await PostUpdate(model);
-
-            CompleteTransactionScope(scope, localScope);
-
             return model;
         }
 
-        protected async Task<int> DeleteInternal(TKey id, TransactionScope? scope)
+        protected async Task<int> DeleteInternal(TKey id)
         {
             var entity = await GetInternal(id, true);
             PreEntityValidation(entity);
             await PreDeleteValidation(entity);
 
-            var localScope = GetTransactionScope(scope);
-
-            await VisitRelationships(entity!, localScope, CheckCascadingEntityDeletion, isCascading: true);
+            await VisitRelationships(entity!, CheckCascadingEntityDeletion, isCascading: true);
             await PreDeletion(entity!);
             var result = DataManager.Delete(id);
             await PostDeletion(entity!);
-
-            CompleteTransactionScope(scope, localScope);
 
             return result;
         }
@@ -209,19 +206,19 @@ namespace Porygon.Entity.Manager
         #endregion
 
         #region Interface Functions
-        public async Task<object> Create(object model, TransactionScope scope)
+        public async Task<object> Create(object model)
         {
-            return await CreateInternal((TModel)model, scope);
+            return await CreateInternal((TModel)model);
         }
 
-        public async Task<object> Update(object model, TransactionScope scope)
+        public async Task<object> Update(object model)
         {
-            return await UpdateInternal((TModel)model, scope);
+            return await UpdateInternal((TModel)model);
         }
 
-        public async Task<int> Delete(object id, TransactionScope scope)
+        public async Task<int> Delete(object id)
         {
-            return await DeleteInternal((TKey)id, scope);
+            return await DeleteInternal((TKey)id);
         }
 
         public async Task<object> Get(object id)
@@ -232,7 +229,7 @@ namespace Porygon.Entity.Manager
         public async Task<IEnumerable<object?>> GetByLinkedItemId(object id)
         {
             return await SearchInternal(new TFilter() { LinkedItemId = (TKey)id }, true);
-        } 
+        }
         #endregion
 
         #region Protected Functions
