@@ -3,7 +3,7 @@
 namespace Porygon.Entity.MySql.Data
 {
     public class MySqlBasicEntityDataManager<T> : MySqlBasicEntityDataManager<T, Guid>
-        where T : class
+        where T : class, IKeyEntity<Guid>
     {
         protected MySqlBasicEntityDataManager(IFreeSql connection) : base(connection)
         {
@@ -11,7 +11,7 @@ namespace Porygon.Entity.MySql.Data
     }
 
     public class MySqlBasicEntityDataManager<T, TKey> : IBasicEntityDataManager<T, TKey>
-    where T : class
+    where T : class, IKeyEntity<TKey>
     {
         protected IFreeSql Connection;
 
@@ -20,12 +20,12 @@ namespace Porygon.Entity.MySql.Data
             Connection = connection;
         }
 
-        public T Get(TKey id)
+        public T? Get(TKey id)
         {
             return Connection.Select<T>(id).First();
         }
 
-        public async Task<T> GetAsync(TKey id)
+        public async Task<T?> GetAsync(TKey id)
         {
             return await Connection.Select<T>(id).FirstAsync();
         }
@@ -57,12 +57,12 @@ namespace Porygon.Entity.MySql.Data
 
         public int Update(T entity)
         {
-            return Connection.Update<T>().SetSourceIgnore(entity, col => col == null).ExecuteAffrows();
+            return Connection.Update<T>().SetSource(entity).ExecuteAffrows();
         }
 
         public async Task<int> UpdateAsync(T entity)
         {
-            return await Connection.Update<T>().SetSourceIgnore(entity, col => col == null).ExecuteAffrowsAsync();
+            return await Connection.Update<T>().SetSource(entity).ExecuteAffrowsAsync();
         }
 
         public virtual int Delete(TKey id)

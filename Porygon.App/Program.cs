@@ -2,6 +2,7 @@ using Flapple.DataAccess.MySQL;
 using Porygon.Entity.Data;
 using Porygon.Entity.Manager;
 using Porygon.Entity.MySql.Data;
+using Porygon.Identity.MySql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,11 +19,12 @@ builder.Services.AddFreeSql(@"Server=localhost;Port=3306;Database=flapple;Uid=ro
 builder.Services.AddScoped<IEntityDataManager, MySqlEntityDataManager>();
 builder.Services.AddScoped<EntityManager>();
 
+builder.Services.AddMySqlIdentity();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();

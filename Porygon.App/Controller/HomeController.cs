@@ -4,9 +4,9 @@ using Porygon.Entity.Manager;
 namespace Porygon.App.Controller
 {
 
-    public class HomeController : EntityController
+    public class PoryEntityController : EntityController
     {
-        public HomeController(EntityManager manager) : base(manager)
+        public PoryEntityController(EntityManager manager) : base(manager)
         {
         }
     }

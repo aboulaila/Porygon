@@ -68,10 +68,11 @@ namespace Porygon.Entity.Manager
 
         public async Task<T?> Create(TModel model)
         {
-            using TransactionScope scope = CreateTransactionScope();
-            T? result = await CreateInternal(model);
-            scope.Complete();
-            return result;
+            using (TransactionScope scope = CreateTransactionScope())
+            {
+                return await CreateInternal(model);
+            }
+
         }
 
         public async Task<List<T>> CreateBulk(List<TModel> models)
@@ -188,8 +189,11 @@ namespace Porygon.Entity.Manager
             if (EmptyId(id))
                 return null;
 
-            var entity = await DataManager.GetAsync(id);
-            return await EnrichAndConvertToViewModel(entity, enriched);
+            T? entity = await DataManager.GetAsync(id);
+            if (entity == null)
+                return null;
+
+            return await EnrichAndConvertToViewModel(entity!, enriched);
         }
 
         protected async Task<List<TModel>> GetAllInternal(bool enriched)
@@ -294,10 +298,7 @@ namespace Porygon.Entity.Manager
 
         protected virtual TransactionScope CreateTransactionScope()
         {
-            return new(TransactionScopeOption.Required, new TransactionOptions()
-            {
-                IsolationLevel = IsolationLevel.ReadCommitted
-            }, TransactionScopeAsyncFlowOption.Enabled);
+            return new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
         }
         #endregion
     }

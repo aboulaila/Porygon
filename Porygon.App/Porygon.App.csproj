@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Porygon.Entity.MySql\Porygon.Entity.MySql.csproj" />
+    <ProjectReference Include="..\Porygon.Identity.MySql\Porygon.Identity.MySql.csproj" />
   </ItemGroup>
 
 </Project>

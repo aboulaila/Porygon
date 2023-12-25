@@ -62,8 +62,8 @@ namespace Porygon.Entity.Controller
         {
             try
             {
-                T result = await Manager.Create(model);
-                return result != null ? Ok(result) : BadRequest();
+                T? result = await Manager.Create(model);
+                return result != null ? Ok(result!) : BadRequest(null);
             }
             catch (Exception exception)
             {
@@ -76,8 +76,8 @@ namespace Porygon.Entity.Controller
         {
             try
             {
-                T result = await Manager.Update(model);
-                return result != null ? Ok(result) : BadRequest();
+                T? result = await Manager.Update(model);
+                return result != null ? Ok(result!) : BadRequest(null);
             }
             catch (Exception exception)
             {
@@ -105,7 +105,7 @@ namespace Porygon.Entity.Controller
             try
             {
                 TModel? result = await Manager.GetEnriched(id);
-                return result != null ? Ok(result) : BadRequest();
+                return result != null ? Ok(result) : BadRequest(null);
             }
             catch (Exception exception)
             {

@@ -1,11 +1,11 @@
 ﻿namespace Porygon.Entity.Data
 {
     public interface IBasicEntityDataManager<T, TKey>
-        where T : class
+        where T : IKeyEntity<TKey>
     {
-        T Get(TKey id);
+        T? Get(TKey id);
 
-        Task<T> GetAsync(TKey id);
+        Task<T?> GetAsync(TKey id);
 
         Task<List<T>> GetAll();
 
@@ -27,7 +27,7 @@
     }
 
     public interface IBasicEntityDataManager<T> : IBasicEntityDataManager<T, Guid>
-        where T : class
+        where T : IKeyEntity<Guid>
     {
     }
 }
