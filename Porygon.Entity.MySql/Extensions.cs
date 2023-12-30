@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Porygon.Entity.Data;
+using Porygon.Entity.MySql.Data;
 
 namespace Flapple.DataAccess.MySQL
 {
@@ -10,6 +12,8 @@ namespace Flapple.DataAccess.MySQL
               .UseConnectionString(FreeSql.DataType.MySql, connectionString)
               .UseAutoSyncStructure(true) //automatically synchronize the entity structure to the database
               .Build());
+
+            services.AddSingleton<IDbConnectionProvider, MySqlDbConnectionProvider>();
             return services;
         }
     }

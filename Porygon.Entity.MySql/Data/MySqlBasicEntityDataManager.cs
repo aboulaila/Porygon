@@ -1,4 +1,6 @@
-﻿using Porygon.Entity.Data;
+﻿using System.Data;
+using System.Data.Common;
+using Porygon.Entity.Data;
 
 namespace Porygon.Entity.MySql.Data
 {
@@ -40,6 +42,11 @@ namespace Porygon.Entity.MySql.Data
             return Connection.Insert(entity).ExecuteAffrows();
         }
 
+        public int Insert(T entity, IDbTransaction transaction)
+        {
+            return Connection.Insert(entity).WithTransaction((DbTransaction)transaction).ExecuteAffrows();
+        }
+
         public async Task<int> InsertAsync(T entity)
         {
             return await Connection.Insert(entity).ExecuteAffrowsAsync();
@@ -60,6 +67,11 @@ namespace Porygon.Entity.MySql.Data
             return Connection.Update<T>().SetSourceIgnore(entity, IgnoreColumn).ExecuteAffrows();
         }
 
+        public int Update(T entity, IDbTransaction transaction)
+        {
+            return Connection.Update<T>().SetSourceIgnore(entity, IgnoreColumn).WithTransaction((DbTransaction)transaction).ExecuteAffrows();
+        }
+
         public async Task<int> UpdateAsync(T entity)
         {
             return await Connection.Update<T>().SetSourceIgnore(entity, IgnoreColumn).ExecuteAffrowsAsync();
@@ -68,6 +80,11 @@ namespace Porygon.Entity.MySql.Data
         public virtual int Delete(TKey id)
         {
             return Connection.Delete<T>(new { id }).ExecuteAffrows();
+        }
+
+        public virtual int Delete(TKey id, IDbTransaction transaction)
+        {
+            return Connection.Delete<T>(new { id }).WithTransaction((DbTransaction)transaction).ExecuteAffrows();
         }
 
         public async Task<int> DeleteAsync(TKey id)

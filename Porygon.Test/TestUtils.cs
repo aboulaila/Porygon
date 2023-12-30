@@ -1,6 +1,7 @@
 ﻿using Moq;
 using Porygon.Entity.Data;
 using Porygon.Entity;
+using System.Data;
 
 namespace Porygon.Test
 {
@@ -19,6 +20,16 @@ namespace Porygon.Test
         public static void SetupEntityGetter(PoryEntity entity, Mock<IEntityDataManager> dataManager)
         {
             dataManager.Setup(x => x.GetAsync(entity.Id)).Returns(Task.FromResult(entity));
+        }
+
+        public static Mock<IDbConnectionProvider> SetupDbConnectionProvider()
+        {
+            Mock<IDbConnection> connection = new();
+            Mock<IDbTransaction> transaction = new();
+            connection.Setup(x => x.BeginTransaction()).Returns(transaction.Object);
+            Mock<IDbConnectionProvider> dbConnectionProvider = new();
+            dbConnectionProvider.Setup(x => x.GetConnection()).Returns(connection.Object);
+            return dbConnectionProvider;
         }
     }
 }

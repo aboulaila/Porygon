@@ -74,12 +74,14 @@ namespace Porygon.Test.Invoice
             InvoiceItemDataManager.Setup(x => x.Search(It.IsAny<EntityFilter>())).Returns(Task.FromResult(itemsList));
             PaymentDataManager.Setup(x => x.Search(It.IsAny<EntityFilter>())).Returns(Task.FromResult(paymentList));
 
-            InvoiceManager = new EntityManager<Invoice>(InvoiceDataManager.Object, ServiceProvider.Object);
-            CustomerManager = new EntityManager<Customer>(CustomerDataManager.Object, ServiceProvider.Object);
-            InvoiceItemManager = new EntityManager<InvoiceItem>(InvoiceItemDataManager.Object, ServiceProvider.Object);
-            ProductManager = new EntityManager<Product>(ProductDataManager.Object, ServiceProvider.Object);
-            ContactDetailManager = new EntityManager<ContactDetail>(ContactDetailDataManager.Object, ServiceProvider.Object);
-            PaymentManager = new EntityManager(PaymentDataManager.Object, ServiceProvider.Object);
+            Mock<IDbConnectionProvider> dbConnectionProvider = TestUtils.SetupDbConnectionProvider();
+
+            InvoiceManager = new EntityManager<Invoice>(InvoiceDataManager.Object, ServiceProvider.Object, dbConnectionProvider.Object);
+            CustomerManager = new EntityManager<Customer>(CustomerDataManager.Object, ServiceProvider.Object, dbConnectionProvider.Object);
+            InvoiceItemManager = new EntityManager<InvoiceItem>(InvoiceItemDataManager.Object, ServiceProvider.Object, dbConnectionProvider.Object);
+            ProductManager = new EntityManager<Product>(ProductDataManager.Object, ServiceProvider.Object, dbConnectionProvider.Object);
+            ContactDetailManager = new EntityManager<ContactDetail>(ContactDetailDataManager.Object, ServiceProvider.Object, dbConnectionProvider.Object);
+            PaymentManager = new EntityManager(PaymentDataManager.Object, ServiceProvider.Object, dbConnectionProvider.Object);
 
             MockServiceProvider(ServiceProvider);
 

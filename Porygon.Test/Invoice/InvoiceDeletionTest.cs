@@ -1,3 +1,5 @@
+using System.Data;
+using System.Data.Common;
 using Moq;
 using Porygon.Entity;
 using Porygon.Entity.Data;
@@ -25,16 +27,19 @@ namespace Porygon.Test.Invoice
         public void Setup()
         {
             Mock<IServiceProvider> serviceProvider = new();
+            Mock<IDbConnectionProvider> dbConnectionProvider = TestUtils.SetupDbConnectionProvider();
 
-            InvoiceManager = new EntityManager<Invoice>(InvoiceDataManager.Object, serviceProvider.Object);
-            CustomerManager = new EntityManager<Customer>(CustomerDataManager.Object, serviceProvider.Object);
-            InvoiceItemManager = new EntityManager<InvoiceItem>(InvoiceItemDataManager.Object, serviceProvider.Object);
-            ProductManager = new EntityManager<Product>(ProductDataManager.Object, serviceProvider.Object);
-            ContactDetailManager = new EntityManager<ContactDetail>(ContactDetailDataManager.Object, serviceProvider.Object);
-            PaymentManager = new EntityManager(PaymentDataManager.Object, serviceProvider.Object);
+            InvoiceManager = new EntityManager<Invoice>(InvoiceDataManager.Object, serviceProvider.Object, dbConnectionProvider.Object);
+            CustomerManager = new EntityManager<Customer>(CustomerDataManager.Object, serviceProvider.Object, dbConnectionProvider.Object);
+            InvoiceItemManager = new EntityManager<InvoiceItem>(InvoiceItemDataManager.Object, serviceProvider.Object, dbConnectionProvider.Object);
+            ProductManager = new EntityManager<Product>(ProductDataManager.Object, serviceProvider.Object, dbConnectionProvider.Object);
+            ContactDetailManager = new EntityManager<ContactDetail>(ContactDetailDataManager.Object, serviceProvider.Object, dbConnectionProvider.Object);
+            PaymentManager = new EntityManager(PaymentDataManager.Object, serviceProvider.Object, dbConnectionProvider.Object);
 
             MockServiceProvider(serviceProvider);
         }
+
+        
 
         [Test]
         public async Task Test1()
@@ -98,40 +103,40 @@ namespace Porygon.Test.Invoice
             TestUtils.SetupEntityGetter(invoiceItem2, InvoiceItemDataManager);
             TestUtils.SetupEntityGetter(invoice, InvoiceDataManager);
 
-            ContactDetailDataManager.Setup(x => x.Delete(It.IsAny<Guid>())).Returns(1);
-            InvoiceItemDataManager.Setup(x => x.Delete(It.IsAny<Guid>())).Returns(1);
-            InvoiceDataManager.Setup(x => x.Delete(It.IsAny<Guid>())).Returns(1);
-            PaymentDataManager.Setup(x => x.Delete(It.IsAny<Guid>())).Returns(1);
+            ContactDetailDataManager.Setup(x => x.Delete(It.IsAny<Guid>(), It.IsAny<IDbTransaction>())).Returns(1);
+            InvoiceItemDataManager.Setup(x => x.Delete(It.IsAny<Guid>(), It.IsAny<IDbTransaction>())).Returns(1);
+            InvoiceDataManager.Setup(x => x.Delete(It.IsAny<Guid>(), It.IsAny<IDbTransaction>())).Returns(1);
+            PaymentDataManager.Setup(x => x.Delete(It.IsAny<Guid>(), It.IsAny<IDbTransaction>())).Returns(1);
 
             await InvoiceManager.Delete(invoice.Id);
 
-            Mock.Get(InvoiceDataManager.Object).Verify(x => x.Insert(invoice), Times.Never);
-            Mock.Get(InvoiceDataManager.Object).Verify(x => x.Update(invoice), Times.Never);
-            Mock.Get(InvoiceDataManager.Object).Verify(x => x.Delete(invoice.Id), Times.Once);
+            Mock.Get(InvoiceDataManager.Object).Verify(x => x.Insert(invoice, It.IsAny<IDbTransaction>()), Times.Never);
+            Mock.Get(InvoiceDataManager.Object).Verify(x => x.Update(invoice, It.IsAny<IDbTransaction>()), Times.Never);
+            Mock.Get(InvoiceDataManager.Object).Verify(x => x.Delete(invoice.Id, It.IsAny<IDbTransaction>()), Times.Once);
 
-            Mock.Get(ContactDetailDataManager.Object).Verify(x => x.Insert(contactDetail), Times.Never);
-            Mock.Get(ContactDetailDataManager.Object).Verify(x => x.Update(contactDetail), Times.Never);
-            Mock.Get(ContactDetailDataManager.Object).Verify(x => x.Delete(contactDetail.Id), Times.Never);
+            Mock.Get(ContactDetailDataManager.Object).Verify(x => x.Insert(contactDetail, It.IsAny<IDbTransaction>()), Times.Never);
+            Mock.Get(ContactDetailDataManager.Object).Verify(x => x.Update(contactDetail, It.IsAny<IDbTransaction>()), Times.Never);
+            Mock.Get(ContactDetailDataManager.Object).Verify(x => x.Delete(contactDetail.Id, It.IsAny<IDbTransaction>()), Times.Never);
 
-            Mock.Get(ProductDataManager.Object).Verify(x => x.Insert(product), Times.Never);
-            Mock.Get(ProductDataManager.Object).Verify(x => x.Update(product), Times.Never);
-            Mock.Get(ProductDataManager.Object).Verify(x => x.Delete(product.Id), Times.Never);
+            Mock.Get(ProductDataManager.Object).Verify(x => x.Insert(product, It.IsAny<IDbTransaction>()), Times.Never);
+            Mock.Get(ProductDataManager.Object).Verify(x => x.Update(product, It.IsAny<IDbTransaction>()), Times.Never);
+            Mock.Get(ProductDataManager.Object).Verify(x => x.Delete(product.Id, It.IsAny<IDbTransaction>()), Times.Never);
 
-            Mock.Get(CustomerDataManager.Object).Verify(x => x.Insert(customer), Times.Never);
-            Mock.Get(CustomerDataManager.Object).Verify(x => x.Update(customer), Times.Never);
-            Mock.Get(CustomerDataManager.Object).Verify(x => x.Delete(customer.Id), Times.Never);
+            Mock.Get(CustomerDataManager.Object).Verify(x => x.Insert(customer, It.IsAny<IDbTransaction>()), Times.Never);
+            Mock.Get(CustomerDataManager.Object).Verify(x => x.Update(customer, It.IsAny<IDbTransaction>()), Times.Never);
+            Mock.Get(CustomerDataManager.Object).Verify(x => x.Delete(customer.Id, It.IsAny<IDbTransaction>()), Times.Never);
 
-            Mock.Get(InvoiceItemDataManager.Object).Verify(x => x.Insert(invoiceItem), Times.Never);
-            Mock.Get(InvoiceItemDataManager.Object).Verify(x => x.Update(invoiceItem), Times.Never);
-            Mock.Get(InvoiceItemDataManager.Object).Verify(x => x.Delete(invoiceItem.Id), Times.Once);
+            Mock.Get(InvoiceItemDataManager.Object).Verify(x => x.Insert(invoiceItem, It.IsAny<IDbTransaction>()), Times.Never);
+            Mock.Get(InvoiceItemDataManager.Object).Verify(x => x.Update(invoiceItem, It.IsAny<IDbTransaction>()), Times.Never);
+            Mock.Get(InvoiceItemDataManager.Object).Verify(x => x.Delete(invoiceItem.Id, It.IsAny<IDbTransaction>()), Times.Once);
 
-            Mock.Get(InvoiceItemDataManager.Object).Verify(x => x.Insert(invoiceItem2), Times.Never);
-            Mock.Get(InvoiceItemDataManager.Object).Verify(x => x.Update(invoiceItem2), Times.Never);
-            Mock.Get(InvoiceItemDataManager.Object).Verify(x => x.Delete(invoiceItem2.Id), Times.Once);
+            Mock.Get(InvoiceItemDataManager.Object).Verify(x => x.Insert(invoiceItem2, It.IsAny<IDbTransaction>()), Times.Never);
+            Mock.Get(InvoiceItemDataManager.Object).Verify(x => x.Update(invoiceItem2, It.IsAny<IDbTransaction>()), Times.Never);
+            Mock.Get(InvoiceItemDataManager.Object).Verify(x => x.Delete(invoiceItem2.Id, It.IsAny<IDbTransaction>()), Times.Once);
 
-            Mock.Get(PaymentDataManager.Object).Verify(x => x.Insert(It.IsAny<PoryEntity>()), Times.Never);
-            Mock.Get(PaymentDataManager.Object).Verify(x => x.Update(It.IsAny<PoryEntity>()), Times.Never);
-            Mock.Get(PaymentDataManager.Object).Verify(x => x.Delete(It.IsAny<Guid>()), Times.Exactly(2));
+            Mock.Get(PaymentDataManager.Object).Verify(x => x.Insert(It.IsAny<PoryEntity>(), It.IsAny<IDbTransaction>()), Times.Never);
+            Mock.Get(PaymentDataManager.Object).Verify(x => x.Update(It.IsAny<PoryEntity>(), It.IsAny<IDbTransaction>()), Times.Never);
+            Mock.Get(PaymentDataManager.Object).Verify(x => x.Delete(It.IsAny<Guid>(), It.IsAny<IDbTransaction>()), Times.Exactly(2));
         }
 
         [Test]

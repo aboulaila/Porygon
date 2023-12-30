@@ -1,4 +1,6 @@
-﻿namespace Porygon.Entity.Data
+﻿using System.Data;
+
+namespace Porygon.Entity.Data
 {
     public interface IBasicEntityDataManager<T, TKey>
         where T : class
@@ -11,6 +13,8 @@
 
         int Insert(T entity);
 
+        int Insert(T entity, IDbTransaction transaction);
+
         Task<int> InsertAsync(T entity);
 
         int InsertMany(IEnumerable<T> entities);
@@ -19,9 +23,13 @@
 
         int Update(T entity);
 
+        int Update(T entity, IDbTransaction transaction);
+
         Task<int> UpdateAsync(T entity);
 
         int Delete(TKey id);
+
+        int Delete(TKey id, IDbTransaction transaction);
 
         Task<int> DeleteAsync(TKey id);
     }

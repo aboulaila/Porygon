@@ -1,12 +1,12 @@
-﻿using System.Transactions;
+﻿using System.Data;
 
 namespace Porygon.Entity.Manager
 {
     public interface IEntityManager
     {
-        Task<object?> Create(object model);
-        Task<object?> Update(object model);
-        Task<int> Delete(object id);
+        Task<object?> Create(object model, IDbTransaction transaction);
+        Task<object?> Update(object model, IDbTransaction transaction);
+        Task<int> Delete(object id, IDbTransaction transaction);
         Task<object?> Get(object id);
         Task<IEnumerable<object?>> GetByLinkedItemId(object id);
     }
