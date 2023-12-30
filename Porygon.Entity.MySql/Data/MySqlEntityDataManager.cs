@@ -53,10 +53,10 @@ namespace Porygon.Entity.MySql.Data
             return await Connection.Select<T>(filter)
                 .Where(e =>
                     string.IsNullOrEmpty(filter.Criteria)
-                    || $"{e.Title}".Contains(filter.Criteria)
+                    || $"{e.Title}".StartsWith(filter.Criteria, StringComparison.OrdinalIgnoreCase)
                    )
-                .Page(filter.Skip, filter.Take)
-                //.OrderBy(e => e.DateCreated)
+                .Page(filter.Skip, filter.Take == 0 ? 20 : filter.Take)
+                .OrderBy(e => e.DateCreated)
                 .ToListAsync();
         }
     }

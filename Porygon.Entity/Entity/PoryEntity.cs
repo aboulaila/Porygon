@@ -1,9 +1,11 @@
-﻿using Porygon.Entity.Entity;
+﻿using FreeSql.DataAnnotations;
+using Porygon.Entity.Entity;
 
 namespace Porygon.Entity
 {
     public class PoryEntity<TKey> : IKeyEntity<TKey>
     {
+        [Column(IsIdentity = true, IsPrimary = true)]
         public TKey? Id { get; set; }
         public string? Name { get; set; }
         public string? Title { get; set; }

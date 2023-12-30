@@ -32,6 +32,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
+    <PackageReference Include="FreeSql.Provider.MySql" Version="3.2.808" />
   </ItemGroup>
 
   <ItemGroup>

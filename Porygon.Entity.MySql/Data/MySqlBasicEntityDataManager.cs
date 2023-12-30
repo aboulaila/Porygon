@@ -57,12 +57,12 @@ namespace Porygon.Entity.MySql.Data
 
         public int Update(T entity)
         {
-            return Connection.Update<T>().SetSource(entity).ExecuteAffrows();
+            return Connection.Update<T>().SetSourceIgnore(entity, IgnoreColumn).ExecuteAffrows();
         }
 
         public async Task<int> UpdateAsync(T entity)
         {
-            return await Connection.Update<T>().SetSource(entity).ExecuteAffrowsAsync();
+            return await Connection.Update<T>().SetSourceIgnore(entity, IgnoreColumn).ExecuteAffrowsAsync();
         }
 
         public virtual int Delete(TKey id)
@@ -73,6 +73,20 @@ namespace Porygon.Entity.MySql.Data
         public async Task<int> DeleteAsync(TKey id)
         {
             return await Connection.Delete<T>(new { id }).ExecuteAffrowsAsync();
+        }
+
+        private bool IgnoreColumn(object column)
+        {
+            if (column == null)
+                return true;
+
+            if (column is DateTime date)
+                return date == default;
+
+            if (column is Guid id)
+                return id == Guid.Empty;
+
+            return false;
         }
     }
 }
