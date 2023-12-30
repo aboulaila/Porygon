@@ -83,7 +83,7 @@ namespace Porygon.Entity.Manager
             {
                 foreach (var model in models)
                 {
-                    var entity = await Create(model);
+                    var entity = await CreateInternal(model);
                     entities.Add(entity);
                 }
             }
