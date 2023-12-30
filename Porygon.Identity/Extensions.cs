@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Porygon.Identity.Entity;
 using Porygon.Identity.Stores;
@@ -19,12 +18,7 @@ namespace Porygon.Identity
             
             services.AddRazorPages();
 
-            services.AddAuthorization(options =>
-            {
-                options.FallbackPolicy = new AuthorizationPolicyBuilder()
-                    .RequireAuthenticatedUser()
-                    .Build();
-            });
+            services.AddAuthorization();
 
             return services;
         }

@@ -1,9 +1,8 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using Porygon.Entity;
 
 namespace Porygon.Identity.Entity
 {
-    public class User : IdentityUser, IKeyEntity<string>
+    public class User : IdentityUser
     {
         [PersonalData]
         public string? FirstName { get; set; }

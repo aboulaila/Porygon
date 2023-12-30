@@ -1,7 +1,7 @@
 ﻿namespace Porygon.Entity.Data
 {
     public interface IBasicEntityDataManager<T, TKey>
-        where T : IKeyEntity<TKey>
+        where T : class
     {
         T? Get(TKey id);
 
@@ -27,7 +27,7 @@
     }
 
     public interface IBasicEntityDataManager<T> : IBasicEntityDataManager<T, Guid>
-        where T : IKeyEntity<Guid>
+        where T : class
     {
     }
 }
