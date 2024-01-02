@@ -144,10 +144,10 @@ namespace Porygon.Entity.Manager
 
             model.Enrich(false);
 
-            await VisitRelationships(model, CheckRelatedEntityState, RelationshipType.HasA);
+            await VisitRelationships(model, ManipulateRelatedEntity, RelationshipType.HasA);
             await PreUpdate(model);
             DataManager.Update(model, transaction);
-            await VisitRelationships(model, CheckRelatedEntityState, RelationshipType.HasMany);
+            await VisitRelationships(model, ManipulateRelatedEntity, RelationshipType.HasMany);
             await PostUpdate(model);
             return model;
         }

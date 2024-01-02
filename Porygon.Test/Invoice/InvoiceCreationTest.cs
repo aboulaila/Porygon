@@ -72,7 +72,8 @@ namespace Porygon.Test.Invoice
                 },
                 Payments = new List<PoryEntity> { new PoryEntity(), new PoryEntity(), new PoryEntity() }
             };
-            await InvoiceManager.Create(invoice);
+
+            Invoice? createdInvoice = await InvoiceManager.Create(invoice);
 
             Assert.Multiple(() =>
             {
@@ -80,6 +81,18 @@ namespace Porygon.Test.Invoice
                 TestUtils.AssertIdNotEmpty(customer);
                 TestUtils.AssertIdNotEmpty(product);
                 TestUtils.AssertIdNotEmpty(invoiceItem);
+            });
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(createdInvoice, Is.Not.Null);
+                Assert.That(createdInvoice!.CustomerId, Is.EqualTo(customer.Id));
+                Assert.That(customer.ContactDetailId, Is.EqualTo(Guid.Empty));
+                Assert.That(invoiceItem.ProductId, Is.EqualTo(product.Id));
+                Assert.That(invoiceItem.LinkedItemId, Is.EqualTo(invoice.Id));
+                Assert.That(invoice.Payments[0].LinkedItemId, Is.EqualTo(invoice.Id));
+                Assert.That(invoice.Payments[1].LinkedItemId, Is.EqualTo(invoice.Id));
+                Assert.That(invoice.Payments[2].LinkedItemId, Is.EqualTo(invoice.Id));
             });
 
             Mock.Get(PaymentDataManager).Verify(x => x.Insert(It.IsAny<PoryEntity>(), It.IsAny<IDbTransaction>()), Times.Exactly(3));

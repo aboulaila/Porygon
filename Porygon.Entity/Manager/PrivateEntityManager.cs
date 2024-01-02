@@ -36,7 +36,8 @@ namespace Porygon.Entity.Manager
         {
             if (!Extensions.IsNullOrEmpty(results))
             {
-                return await results.ParallelForEach(async (entity) => {                    
+                return await results.ParallelForEach(async (entity) =>
+                {
                     return await EnrichAndConvertToViewModel(entity, enriched);
                 });
             }
@@ -84,28 +85,59 @@ namespace Porygon.Entity.Manager
             }
         }
 
-        private async Task CheckRelatedEntityState(TModel model, Relationship relationship, PoryEntity<TKey> entity)
+        private async Task ManipulateRelatedEntity(TModel model, Relationship relationship, PoryEntity<TKey> entity)
+        {
+            LinkRelatedEntity(model, relationship, entity);
+            TKey? relatedEntityId = await ManipulateRelatedEntityIfNeededAndReturnId(model, relationship, entity);
+            SetRelatedEntityIdProperty(model, relationship, relatedEntityId);
+        }
+
+        private async Task<TKey?> ManipulateRelatedEntityIfNeededAndReturnId(TModel model, Relationship relationship, PoryEntity<TKey> entity)
         {
             if (ShouldCreateEntity(entity))
             {
-                await CreateRelatedEntity(model, relationship, entity);
+                return await CreateRelatedEntity(model, relationship, entity);
             }
             else if (Equals(entity.State, EntityStates.UPDATED))
             {
-                await UpdateRelatedEntity(relationship, entity);
+                return await UpdateRelatedEntity(model, relationship, entity);
             }
             else if (Equals(entity.State, EntityStates.DELETED))
             {
-                await DeleteRelatedEntity(relationship, entity.Id!);
+                return await DeleteRelatedEntity(relationship, entity.Id!);
             }
+            return entity.Id;
         }
 
         private async Task CheckRelatedEntityCreation(TModel model, Relationship relationship, PoryEntity<TKey> entity)
         {
+            LinkRelatedEntity(model, relationship, entity);
+            TKey? relatedEntityId = await CreateRelatedEntityIfNeededAndReturnId(model, relationship, entity);
+            SetRelatedEntityIdProperty(model, relationship, relatedEntityId);
+        }
+
+        private async Task<TKey?> CreateRelatedEntityIfNeededAndReturnId(TModel model, Relationship relationship, PoryEntity<TKey> entity)
+        {
             if (ShouldCreateEntity(entity))
-            {
-                await CreateRelatedEntity(model, relationship, entity);
-            }
+                return await CreateRelatedEntity(model, relationship, entity);
+            return entity.Id;
+        }
+
+        private static void SetRelatedEntityIdProperty(TModel model, Relationship relationship, TKey? relatedEntityId)
+        {
+            if (relationship.IsHasA && !Equals(relatedEntityId, default))
+                UpdateRelatedEntityId(model, relationship, relatedEntityId!);
+        }
+
+        private static void LinkRelatedEntity(TModel model, Relationship relationship, PoryEntity<TKey> entity)
+        {
+            if (relationship.IsHasMany)
+                entity.LinkedItemId = model.Id;
+        }
+
+        private static void UpdateRelatedEntityId(TModel model, Relationship relationship, TKey relatedEntityId)
+        {
+            model.GetType().GetProperty(relationship.PropertyIdName!)?.SetValue(model, relatedEntityId, null);
         }
 
         private async Task CheckCascadingEntityDeletion(TModel model, Relationship relationship, PoryEntity<TKey> entity)
@@ -200,22 +232,33 @@ namespace Porygon.Entity.Manager
             return entityList.FilterNulls();
         }
 
-        private async Task CreateRelatedEntity(TModel model, Relationship relationship, PoryEntity<TKey> entity)
+        private async Task<TKey> CreateRelatedEntity(TModel model, Relationship relationship, PoryEntity<TKey> entity)
+        {
+            object? newEntity = await relationship.EntityManager!.Create(entity, Transaction) ?? throw new Exception($"Failed to create {entity.GetType()}");
+            return GetEntityIdFromObject(newEntity, relationship, "create");
+        }
+
+        private async Task<TKey> UpdateRelatedEntity(TModel model, Relationship relationship, PoryEntity<TKey> entity)
         {
             entity.LinkedItemId = model.Id;
-            _ = await relationship.EntityManager!.Create(entity, Transaction) ?? throw new Exception($"Failed to create {entity.GetType()}");
+            object? newEntity = await relationship.EntityManager!.Update(entity, Transaction) ?? throw new Exception($"Failed to update {entity.GetType()}");
+            return GetEntityIdFromObject(newEntity, relationship, "update");
         }
 
-        private async Task UpdateRelatedEntity(Relationship relationship, PoryEntity<TKey> entity)
-        {
-            _ = await relationship.EntityManager!.Update(entity, Transaction) ?? throw new Exception($"Failed to update {entity.GetType()}");
-        }
-
-        private async Task DeleteRelatedEntity(Relationship relationship, TKey id)
+        private async Task<TKey> DeleteRelatedEntity(Relationship relationship, TKey id)
         {
             bool isDeleted = await relationship.EntityManager!.Delete(id!, Transaction) > 0;
             if (!isDeleted)
                 throw new Exception($"Failed to delete entity with ID: {id}");
+            return id;
+        }
+
+        private static TKey GetEntityIdFromObject(object? newEntity, Relationship relationship, string action)
+        {
+            if (newEntity == null)
+                throw new Exception($"Failed to {action} related entity: {relationship.PropertyName}");
+
+            return (newEntity as PoryEntity<TKey>).Id;
         }
 
         private static bool HasTheDesiredAttribute(PropertyInfo property, RelationshipType? relationshipType)

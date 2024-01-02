@@ -1,5 +1,4 @@
 using System.Data;
-using System.Data.Common;
 using Moq;
 using Porygon.Entity;
 using Porygon.Entity.Data;
@@ -16,12 +15,12 @@ namespace Porygon.Test.Invoice
         private EntityManager<ContactDetail> ContactDetailManager { get; set; }
         private EntityManager PaymentManager { get; set; }
 
-        private Mock<IEntityDataManager<Invoice>> InvoiceDataManager = new();
-        private Mock<IEntityDataManager<Customer>> CustomerDataManager = new();
-        private Mock<IEntityDataManager<Product>> ProductDataManager = new();
-        private Mock<IEntityDataManager<ContactDetail>> ContactDetailDataManager = new();
-        private Mock<IEntityDataManager<InvoiceItem>> InvoiceItemDataManager = new();
-        private Mock<IEntityDataManager> PaymentDataManager = new();
+        private readonly Mock<IEntityDataManager<Invoice>> InvoiceDataManager = new();
+        private readonly Mock<IEntityDataManager<Customer>> CustomerDataManager = new();
+        private readonly Mock<IEntityDataManager<Product>> ProductDataManager = new();
+        private readonly Mock<IEntityDataManager<ContactDetail>> ContactDetailDataManager = new();
+        private readonly Mock<IEntityDataManager<InvoiceItem>> InvoiceItemDataManager = new();
+        private readonly Mock<IEntityDataManager> PaymentDataManager = new();
 
         [SetUp]
         public void Setup()

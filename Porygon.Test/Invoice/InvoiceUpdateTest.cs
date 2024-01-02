@@ -15,12 +15,12 @@ namespace Porygon.Test.Invoice
         private EntityManager<ContactDetail> ContactDetailManager { get; set; }
         private EntityManager PaymentManager { get; set; }
 
-        private IEntityDataManager<Invoice> InvoiceDataManager = Mock.Of<IEntityDataManager<Invoice>>();
-        private IEntityDataManager<Customer> CustomerDataManager = Mock.Of<IEntityDataManager<Customer>>();
-        private IEntityDataManager<Product> ProductDataManager = Mock.Of<IEntityDataManager<Product>>();
-        private IEntityDataManager<ContactDetail> ContactDetailDataManager = Mock.Of<IEntityDataManager<ContactDetail>>();
-        private Mock<IEntityDataManager<InvoiceItem>> InvoiceItemDataManager = new();
-        private Mock<IEntityDataManager> PaymentDataManager = new();
+        private readonly IEntityDataManager<Invoice> InvoiceDataManager = Mock.Of<IEntityDataManager<Invoice>>();
+        private readonly IEntityDataManager<Customer> CustomerDataManager = Mock.Of<IEntityDataManager<Customer>>();
+        private readonly IEntityDataManager<Product> ProductDataManager = Mock.Of<IEntityDataManager<Product>>();
+        private readonly IEntityDataManager<ContactDetail> ContactDetailDataManager = Mock.Of<IEntityDataManager<ContactDetail>>();
+        private readonly Mock<IEntityDataManager<InvoiceItem>> InvoiceItemDataManager = new();
+        private readonly Mock<IEntityDataManager> PaymentDataManager = new();
 
         [SetUp]
         public void Setup()
@@ -98,7 +98,7 @@ namespace Porygon.Test.Invoice
             InvoiceItemDataManager.Setup(x => x.GetAsync(Guid.Parse("F518B860-3EE8-4451-A9AA-B8C31872FD17"))).Returns(Task.FromResult(invoiceItem2));
             PaymentDataManager.Setup(x => x.GetAsync(Guid.Parse("1821C8B8-379F-47C6-A155-4E892A9D2ED6"))).Returns(Task.FromResult(payment));
 
-            await InvoiceManager.Update(invoice);
+            Invoice? updatedInvoide = await InvoiceManager.Update(invoice);
 
             Assert.Multiple(() =>
             {
@@ -106,6 +106,18 @@ namespace Porygon.Test.Invoice
                 TestUtils.AssertIdNotEmpty(customer);
                 TestUtils.AssertIdNotEmpty(product);
                 TestUtils.AssertIdNotEmpty(invoiceItem);
+            });
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(updatedInvoide, Is.Not.Null);
+                Assert.That(updatedInvoide!.CustomerId, Is.EqualTo(customer.Id));
+                Assert.That(customer.ContactDetailId, Is.EqualTo(Guid.Empty));
+                Assert.That(invoiceItem.ProductId, Is.EqualTo(product.Id));
+                Assert.That(invoiceItem.LinkedItemId, Is.EqualTo(invoice.Id));
+                Assert.That(invoice.Payments[0].LinkedItemId, Is.EqualTo(invoice.Id));
+                Assert.That(invoice.Payments[1].LinkedItemId, Is.EqualTo(invoice.Id));
+                Assert.That(invoice.Payments[2].LinkedItemId, Is.EqualTo(invoice.Id));
             });
 
             Mock.Get(InvoiceDataManager).Verify(x => x.Insert(invoice, It.IsAny<IDbTransaction>()), Times.Never);
