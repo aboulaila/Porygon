@@ -1,53 +1,42 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Porygon.Entity.Interfaces;
 using Porygon.Entity.Manager;
 
 namespace Porygon.Entity.Controller
 {
-    public abstract class EntityController : EntityController<PoryEntity, Guid, PoryEntity, EntityFilter, EntityManager>
+    public abstract class EntityController : EntityController<PoryEntity, PoryEntity, EntityFilter, EntityManager>
     {
         protected EntityController(EntityManager manager) : base(manager)
         {
         }
     }
 
-    public abstract class EntityController<T, TManager> : EntityController<T, Guid, T, EntityFilter, TManager>
+    public abstract class EntityController<T, TManager> : EntityController<T, T, EntityFilter, TManager>
         where T : PoryEntity
-        where TManager : IEntityManager<T, Guid, EntityFilter, T>
+        where TManager : IEntityManager<T, EntityFilter, T>
     {
         protected EntityController(TManager manager) : base(manager)
         {
         }
     }
 
-    public abstract class EntityController<T, TFilter, TManager> : EntityController<T, Guid, T, TFilter, TManager>
+    public abstract class EntityController<T, TFilter, TManager> : EntityController<T, T, TFilter, TManager>
         where T : PoryEntity
         where TFilter : EntityFilter, new()
-        where TManager : IEntityManager<T, Guid, TFilter, T>
+        where TManager : IEntityManager<T, TFilter, T>
     {
         protected EntityController(TManager manager) : base(manager)
         {
         }
     }
-
-    public abstract class EntityController<T, TModel, TFilter, TManager> : EntityController<T, Guid, TModel, TFilter, TManager>
-        where T : PoryEntity
-        where TModel : T
-        where TFilter : EntityFilter, new()
-        where TManager : IEntityManager<T, Guid, TFilter, TModel>
-    {
-        protected EntityController(TManager manager) : base(manager)
-        {
-        }
-    }
-
 
     [ApiController]
     [Route("api/[controller]")]
-    public abstract class EntityController<T, TKey, TModel, TFilter, TManager> : ControllerBase
-    where T : PoryEntity<TKey>
+    public abstract class EntityController<T, TModel, TFilter, TManager> : ControllerBase
+    where T : PoryEntity
     where TModel : T
-    where TFilter : EntityFilter<TKey>, new()
-    where TManager : IEntityManager<T, TKey, TFilter, TModel>
+    where TFilter : EntityFilter, new()
+    where TManager : IEntityManager<T, TFilter, TModel>
     {
         protected TManager Manager;
 
@@ -86,7 +75,7 @@ namespace Porygon.Entity.Controller
         }
 
         [HttpDelete("{id?}")]
-        public async Task<IActionResult> Delete(TKey id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             try
             {
@@ -100,7 +89,7 @@ namespace Porygon.Entity.Controller
 
 
         [HttpGet("{id?}")]
-        public async Task<IActionResult> Get(TKey id)
+        public async Task<IActionResult> Get(Guid id)
         {
             try
             {
@@ -143,7 +132,7 @@ namespace Porygon.Entity.Controller
 
 
         [HttpGet("lite/{id?}")]
-        public async Task<IActionResult> GetLite(TKey id)
+        public async Task<IActionResult> GetLite(Guid id)
         {
             try
             {

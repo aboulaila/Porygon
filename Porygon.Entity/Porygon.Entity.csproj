@@ -17,6 +17,10 @@
     <Compile Remove="nuget\**" />
     <EmbeddedResource Remove="nuget\**" />
     <None Remove="nuget\**" />
+    <None Remove="Utils\" />
+    <None Remove="Interfaces\" />
+    <None Remove="Data\" />
+    <None Remove="Tasks\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -42,4 +46,10 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Utils\" />
+    <Folder Include="Interfaces\" />
+    <Folder Include="Data\" />
+    <Folder Include="Tasks\" />
+  </ItemGroup>
 </Project>

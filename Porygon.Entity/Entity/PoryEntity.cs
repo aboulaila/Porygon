@@ -22,11 +22,12 @@ namespace Porygon.Entity
                 DateCreated = DateTime.UtcNow;
             }
             DateModified = DateTime.UtcNow;
+            State = EntityStates.UNMODIFIED;
         }
 
-        public virtual TModel ToViewModel<TModel>() where TModel : PoryEntity<TKey>
+        public virtual IKeyEntity<TKey> ToViewModel()
         {
-            return (TModel)this;
+            return this;
         }
     }
 

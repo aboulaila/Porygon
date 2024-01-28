@@ -1,5 +1,5 @@
 ﻿using System.Data;
-namespace Porygon.Entity.Data
+namespace Porygon.Entity.Interfaces
 {
     public interface IDbConnectionProvider
 	{

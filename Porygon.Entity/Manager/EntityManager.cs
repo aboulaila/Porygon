@@ -1,17 +1,17 @@
-﻿using System.Data;
-using Porygon.Entity.Data;
-using Porygon.Entity.Relationships;
+﻿using Porygon.Entity.Interfaces;
+using Porygon.Entity.Tasks;
+using Porygon.Entity.Utils;
 
 namespace Porygon.Entity.Manager
 {
-    public class EntityManager : EntityManager<PoryEntity, Guid, PoryEntity, EntityFilter, IEntityDataManager>
+    public class EntityManager : EntityManager<PoryEntity, PoryEntity, EntityFilter, IEntityDataManager>
     {
         public EntityManager(IEntityDataManager dataManager, IServiceProvider serviceProvider, IDbConnectionProvider dbConnectionProvider) : base(dataManager, serviceProvider, dbConnectionProvider)
         {
         }
     }
 
-    public class EntityManager<T> : EntityManager<T, Guid, T, EntityFilter, IEntityDataManager<T>>
+    public class EntityManager<T> : EntityManager<T, T, EntityFilter, IEntityDataManager<T>>
            where T : PoryEntity, new()
     {
         public EntityManager(IEntityDataManager<T> dataManager, IServiceProvider serviceProvider, IDbConnectionProvider dbConnectionProvider) : base(dataManager, serviceProvider, dbConnectionProvider)
@@ -19,7 +19,7 @@ namespace Porygon.Entity.Manager
         }
     }
 
-    public class EntityManager<T, TDataManager> : EntityManager<T, Guid, T, EntityFilter, TDataManager>
+    public class EntityManager<T, TDataManager> : EntityManager<T, T, EntityFilter, TDataManager>
            where T : PoryEntity, new()
            where TDataManager : IEntityDataManager<T>
     {
@@ -28,7 +28,7 @@ namespace Porygon.Entity.Manager
         }
     }
 
-    public class EntityManager<T, TFilter, TDataManager> : EntityManager<T, Guid, T, TFilter, TDataManager>
+    public class EntityManager<T, TFilter, TDataManager> : EntityManager<T, T, TFilter, TDataManager>
            where T : PoryEntity, new()
            where TFilter : EntityFilter, new()
            where TDataManager : IEntityDataManager<T, TFilter>
@@ -38,255 +38,203 @@ namespace Porygon.Entity.Manager
         }
     }
 
-    public class EntityManager<T, TModel, TFilter, TDataManager> : EntityManager<T, Guid, TModel, TFilter, TDataManager>
-           where T : PoryEntity, new()
-           where TFilter : EntityFilter, new()
-           where TModel : T
-           where TDataManager : IEntityDataManager<T, TFilter>
-    {
-        public EntityManager(TDataManager dataManager, IServiceProvider serviceProvider, IDbConnectionProvider dbConnectionProvider) : base(dataManager, serviceProvider, dbConnectionProvider)
-        {
-        }
-    }
-
-    public partial class EntityManager<T, TKey, TModel, TFilter, TDataManager> : IEntityManager<T, TKey, TFilter, TModel>
-        where T : PoryEntity<TKey>, new()
-        where TFilter : EntityFilter<TKey>, new()
+    public class EntityManager<T, TModel, TFilter, TDataManager> : IEntityManager<T, TFilter, TModel>
+        where T : class, IKeyEntity<Guid>, new()
+        where TFilter : EntityFilter, new()
         where TModel : T
-        where TDataManager : IEntityDataManager<T, TKey, TFilter>
+        where TDataManager : IEntityDataManager<T, Guid, TFilter>
     {
-        protected TDataManager DataManager;
-        protected IServiceProvider ServiceProvider;
-        protected IDbConnectionProvider DbConnectionProvider;
+        protected readonly TDataManager dataManager;
+        private readonly IServiceProvider serviceProvider;
+        private readonly ITransactionExecutor transactionExecutor;
+        private readonly EntityEventsHook createHook;
+        private readonly EntityEventsHook updateHook;
+        private readonly EntityEventsHook deleteHook;
 
         public EntityManager(TDataManager dataManager, IServiceProvider serviceProvider, IDbConnectionProvider dbConnectionProvider)
         {
-            DataManager = dataManager;
-            ServiceProvider = serviceProvider;
-            DbConnectionProvider = dbConnectionProvider;
+            this.dataManager = dataManager;
+            this.serviceProvider = serviceProvider;
+            transactionExecutor = new TransactionExecutor(dbConnectionProvider);
+            createHook = new EntityEventHooksBuilder()
+                .PreValidation(PreCreateValidation)
+                .Pre(PreCreation)
+                .Post(PostCreation)
+                .Build();
+            updateHook = new EntityEventHooksBuilder()
+                .PreValidation(PreUpdateValidation)
+                .Pre(PreUpdate)
+                .Post(PostUpdate)
+                .Build();
+            deleteHook = new EntityEventHooksBuilder()
+                .PreValidation(PreDeleteValidation)
+                .Pre(PreDeletion)
+                .Post(PostDeletion)
+                .Build();
         }
 
         #region Public Functions
 
         public async Task<T?> Create(TModel model)
         {
-            return await ExecuteInTransaction(model, CreateInternal);
-        }
-
-        public async Task<List<T>?> CreateBulk(List<TModel> models)
-        {
-            return await ExecuteInTransaction(models, CreateBulkInternal);
+            return await new EntityCreator(this, serviceProvider)
+                .Entity(model)
+                .TransactionExecutor(transactionExecutor)
+                .Execute<T>();
         }
 
         public async Task<T?> Update(TModel model)
         {
-            return await ExecuteInTransaction(model, UpdateInternal);
+            return await new EntityUpdater(this, serviceProvider)
+                .Entity(model)
+                .TransactionExecutor(transactionExecutor)
+                .Execute<T>();
         }
 
-        public async Task<int> Delete(TKey id)
+        public async Task<int> Delete(Guid id)
         {
-            return await ExecuteInTransaction(id, DeleteInternal);
+            var entity = await GetEnriched(id);
+            return await new EntityDeleter(this, serviceProvider)
+                .Entity(entity!)
+                .TransactionExecutor(transactionExecutor)
+                .Execute<T>() != null ? 1 : 0;
         }
 
-        public async Task<TModel?> GetEnriched(TKey id)
+        public async Task<List<T?>?> CreateBulk(List<TModel> models)
         {
-            return await GetInternal(id, true);
+            return await models.ParallelForEach(Create);
         }
 
-        public async Task<TModel?> Get(TKey id)
+        public async Task<TModel?> GetEnriched(Guid id)
         {
-            return await GetInternal(id, false);
+            return await new EntityRetriever<T, TModel>(this, serviceProvider)
+                .ShouldEnrich()
+                .Get(id);
+        }
+
+        public async Task<TModel?> Get(Guid id)
+        {
+            return await new EntityRetriever<T, TModel>(this, serviceProvider)
+                .Get(id);
         }
 
         public async Task<List<TModel>> GetAll()
         {
-            return await GetAllInternal(false);
+            return await new EntityRetriever<T, TModel>(this, serviceProvider)
+                .Get();
         }
 
         public async Task<List<TModel>> GetAllEnriched()
         {
-            return await GetAllInternal(true);
+            return await new EntityRetriever<T, TModel>(this, serviceProvider)
+                .ShouldEnrich()
+                .Get();
         }
 
         public async Task<List<TModel>> Search(TFilter filter)
         {
-            return await SearchInternal(filter, false);
+            return await new EntitySearcher<T, TModel, TFilter, TDataManager>(this, dataManager, serviceProvider)
+                .Filter(filter)
+                .Search();
         }
 
         public async Task<List<TModel>> SearchEnriched(TFilter filter)
         {
-            return await SearchInternal(filter, true);
-        }
-        #endregion
-
-        #region Internal Functions
-
-        protected async Task<T?> CreateInternal(TModel model, IDbTransaction transaction)
-        {
-            PreEntityValidation(model);
-            await PreCreateValidation(model);
-
-            model.Enrich(true);
-
-            await VisitRelationships(model, CheckRelatedEntityCreation, RelationshipType.HasA);
-            await PreCreation(model);
-            DataManager.Insert(model, transaction);
-            await VisitRelationships(model, CheckRelatedEntityCreation, RelationshipType.HasMany);
-            await PostCreation(model);
-
-            return model;
+            return await new EntitySearcher<T, TModel, TFilter, TDataManager>(this, dataManager, serviceProvider)
+                .Filter(filter)
+                .ShouldEnrich()
+                .Search();
         }
 
-        protected async Task<T?> UpdateInternal(TModel model, IDbTransaction transaction)
+        public async Task<List<TModel>> GetByLinkedItemId(Guid id)
         {
-            PreEntityValidation(model);
-            await PreUpdateValidation(model);
-
-            model.Enrich(false);
-
-            await VisitRelationships(model, ManipulateRelatedEntity, RelationshipType.HasA);
-            await PreUpdate(model);
-            DataManager.Update(model, transaction);
-            await VisitRelationships(model, ManipulateRelatedEntity, RelationshipType.HasMany);
-            await PostUpdate(model);
-            return model;
-        }
-
-        protected async Task<int> DeleteInternal(TKey id, IDbTransaction transaction)
-        {
-            var entity = await GetInternal(id, true);
-            PreEntityValidation(entity);
-            await PreDeleteValidation(entity);
-
-            await VisitRelationships(entity!, CheckCascadingEntityDeletion, isCascading: true);
-            await PreDeletion(entity!);
-            var result = DataManager.Delete(id, transaction);
-            await PostDeletion(entity!);
-
-            return result;
-        }
-
-        protected async Task<List<T>?> CreateBulkInternal(List<TModel> models, IDbTransaction transaction)
-        {
-            var entities = new List<T>();
-            foreach (var model in models)
+            return await SearchEnriched(new TFilter()
             {
-                var entity = await CreateInternal(model, transaction);
-                entities.Add(entity!);
-            }
-            return entities;
+                LinkedItemId = id
+            });
         }
 
-        protected async Task<TModel?> GetInternal(TKey id, bool enriched)
+        public async Task<IEnumerable<object?>> GetLinkedItems(Guid id)
         {
-            if (EmptyId(id))
-                return null;
-
-            T? entity = await DataManager.GetAsync(id);
-            if (entity == null)
-                return null;
-
-            return await EnrichAndConvertToViewModel(entity!, enriched);
+            return (IEnumerable<object?>) await new EntitySearcher<T, TModel, TFilter, TDataManager>(this, dataManager, serviceProvider)
+                .Filter(new TFilter() { LinkedItemId = id })
+                .ShouldEnrich()
+                .Search();
         }
 
-        protected async Task<List<TModel>> GetAllInternal(bool enriched)
+        public async Task<object?> GetSingle(Guid id)
         {
-            var results = await DataManager.GetAll();
-            return await ToViewModel(results, enriched);
+            return await new EntityRetriever<T, TModel>(this, serviceProvider)
+                .ShouldEnrich()
+                .Get(id);
         }
 
-        protected async Task<List<TModel>> SearchInternal(TFilter filter, bool enriched)
+        public IDataManager GetDataManager()
         {
-            var results = await DataManager.Search(filter);
-            return await ToViewModel(results, enriched);
+            return dataManager;
+        }
+
+        public IEntityEventsHook GetCreationHook()
+        {
+            return createHook;
+        }
+
+        public IEntityEventsHook GetUpdateHook()
+        {
+            return updateHook;
+        }
+
+        public IEntityEventsHook GetDeletionHook()
+        {
+            return deleteHook;
         }
         #endregion
-
-        #region Interface Functions
-        public async Task<object> Create(object model, IDbTransaction transaction)
-        {
-            return await CreateInternal((TModel)model, transaction);
-        }
-
-        public async Task<object> Update(object model, IDbTransaction transaction)
-        {
-            return await UpdateInternal((TModel)model, transaction);
-        }
-
-        public async Task<int> Delete(object id, IDbTransaction transaction)
-        {
-            return await DeleteInternal((TKey)id, transaction);
-        }
-
-        public async Task<object> Get(object id)
-        {
-            return await GetInternal((TKey)id, true);
-        }
-
-        public async Task<IEnumerable<object?>> GetByLinkedItemId(object id)
-        {
-            return await SearchInternal(new TFilter() { LinkedItemId = (TKey)id }, true);
-        }
-        #endregion
-
+        
         #region Protected Functions
 
-        protected virtual Task PreCreateValidation(TModel? model)
+        protected virtual Task PreCreateValidation(object? model)
         {
             return Task.CompletedTask;
         }
 
-        protected virtual Task PreUpdateValidation(TModel? model)
+        protected virtual Task PreUpdateValidation(object? model)
         {
             return Task.CompletedTask;
         }
 
-        protected virtual Task PreDeleteValidation(TModel? model)
+        protected virtual Task PreDeleteValidation(object? model)
         {
             return Task.CompletedTask;
         }
 
-        protected virtual Task PreCreation(TModel model)
+        protected virtual Task PreCreation(object model)
         {
             return Task.CompletedTask;
         }
 
-        protected virtual Task PostCreation(TModel model)
+        protected virtual Task PostCreation(object model)
         {
             return Task.CompletedTask;
         }
 
-        protected virtual Task PreUpdate(TModel model)
+        protected virtual Task PreUpdate(object model)
         {
             return Task.CompletedTask;
         }
 
-        protected virtual Task PostUpdate(TModel model)
+        protected virtual Task PostUpdate(object model)
         {
             return Task.CompletedTask;
         }
 
-        protected virtual Task PreDeletion(TModel model)
+        protected virtual Task PreDeletion(object model)
         {
             return Task.CompletedTask;
         }
 
-        protected virtual Task PostDeletion(TModel model)
+        protected virtual Task PostDeletion(object model)
         {
             return Task.CompletedTask;
-        }
-
-        protected virtual async Task EnrichEntity(T entity)
-        {
-            var relationships = GetRelationships(entity);
-
-            if (Extensions.IsNullOrEmpty(relationships))
-                return;
-
-            foreach (var relationship in relationships)
-            {
-                await EnrichRelatedEntities(entity, relationship);
-            }
         }
         #endregion
     }

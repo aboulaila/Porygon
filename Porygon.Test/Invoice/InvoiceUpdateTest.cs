@@ -1,6 +1,6 @@
 using Moq;
 using Porygon.Entity;
-using Porygon.Entity.Data;
+using Porygon.Entity.Interfaces;
 using Porygon.Entity.Manager;
 using System.Data;
 
@@ -95,8 +95,8 @@ namespace Porygon.Test.Invoice
                 }
             };
 
-            InvoiceItemDataManager.Setup(x => x.GetAsync(Guid.Parse("F518B860-3EE8-4451-A9AA-B8C31872FD17"))).Returns(Task.FromResult(invoiceItem2));
-            PaymentDataManager.Setup(x => x.GetAsync(Guid.Parse("1821C8B8-379F-47C6-A155-4E892A9D2ED6"))).Returns(Task.FromResult(payment));
+            InvoiceItemDataManager.Setup(x => x.GetAsync<InvoiceItem>(Guid.Parse("F518B860-3EE8-4451-A9AA-B8C31872FD17"))).Returns(Task.FromResult(invoiceItem2));
+            PaymentDataManager.Setup(x => x.GetAsync<PoryEntity>(Guid.Parse("1821C8B8-379F-47C6-A155-4E892A9D2ED6"))).Returns(Task.FromResult(payment));
 
             Invoice? updatedInvoide = await InvoiceManager.Update(invoice);
 
@@ -152,7 +152,7 @@ namespace Porygon.Test.Invoice
         [Test]
         public void Test2()
         {
-            Assert.ThrowsAsync<ArgumentException>(async () => await InvoiceManager.Update(null));
+            Assert.ThrowsAsync<ArgumentNullException>(async () => await InvoiceManager.Update(null));
         }
 
 

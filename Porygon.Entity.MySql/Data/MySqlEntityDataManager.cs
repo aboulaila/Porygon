@@ -1,4 +1,4 @@
-﻿using Porygon.Entity.Data;
+﻿using Porygon.Entity.Interfaces;
 
 namespace Porygon.Entity.MySql.Data
 {

@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Porygon.Entity.Data;
+using Porygon.Entity.Interfaces;
 using Porygon.Entity.MySql.Data;
 
 namespace Flapple.DataAccess.MySQL

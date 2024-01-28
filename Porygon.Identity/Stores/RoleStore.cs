@@ -44,7 +44,7 @@ namespace Porygon.Identity.Stores
             cancellationToken.ThrowIfCancellationRequested();
             if (roleId == null) throw new ArgumentNullException(nameof(roleId));
 
-            return await RoleDataManager.GetAsync(roleId);
+            return await RoleDataManager.GetAsync<IdentityRole>(roleId);
         }
 
         public async Task<IdentityRole> FindByNameAsync(string normalizedRoleName, CancellationToken cancellationToken)

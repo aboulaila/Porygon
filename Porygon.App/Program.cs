@@ -1,5 +1,5 @@
 using Flapple.DataAccess.MySQL;
-using Porygon.Entity.Data;
+using Porygon.Entity.Interfaces;
 using Porygon.Entity.Manager;
 using Porygon.Entity.MySql.Data;
 using Porygon.Identity.MySql;

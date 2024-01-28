@@ -1,7 +1,7 @@
 ﻿using Moq;
-using Porygon.Entity.Data;
 using Porygon.Entity.Manager;
 using Porygon.Entity;
+using Porygon.Entity.Interfaces;
 
 namespace Porygon.Test.Invoice
 {
@@ -66,7 +66,7 @@ namespace Porygon.Test.Invoice
             TestUtils.SetupEntityGetter(invoiceItem, InvoiceItemDataManager);
             TestUtils.SetupEntityGetter(payment, PaymentDataManager);
             TestUtils.SetupEntityGetter(payment1, PaymentDataManager);
-            InvoiceDataManager.Setup(x => x.GetAsync(invoice.Id)).Returns(() => Task.FromResult(invoice.Clone()));
+            InvoiceDataManager.Setup(x => x.GetAsync<Invoice>(invoice.Id)).Returns(() => Task.FromResult(invoice.Clone()));
 
             var itemsList = new List<InvoiceItem>() { invoiceItem };
             var paymentList = new List<PoryEntity>() { payment, payment1 };
@@ -120,7 +120,7 @@ namespace Porygon.Test.Invoice
                 Assert.That(entity1.Payments, Is.Null);
             });
 
-            InvoiceDataManager.Setup(x => x.GetAll()).Returns(Task.FromResult(new List<Invoice>() { invoice.Clone(), invoice.Clone() }));
+            InvoiceDataManager.Setup(x => x.GetAll<Invoice>()).Returns(Task.FromResult(new List<Invoice>() { invoice.Clone(), invoice.Clone() }));
 
             var entities = await InvoiceManager.GetAllEnriched();
 

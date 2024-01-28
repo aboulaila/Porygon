@@ -1,6 +1,6 @@
 ﻿using System.Data;
 using System.Data.Common;
-using Porygon.Entity.Data;
+using Porygon.Entity.Interfaces;
 
 namespace Porygon.Entity.MySql.Data
 {
@@ -12,14 +12,12 @@ namespace Porygon.Entity.MySql.Data
         }
     }
 
-    public class MySqlBasicEntityDataManager<T, TKey> : IBasicEntityDataManager<T, TKey>
-    where T : class
+    public class MySqlBasicEntityDataManager<T, TKey> : MySqlDataManager, IBasicEntityDataManager<T, TKey>
+        where T : class
     {
-        protected IFreeSql Connection;
 
-        public MySqlBasicEntityDataManager(IFreeSql connection)
+        public MySqlBasicEntityDataManager(IFreeSql connection) : base(connection)
         {
-            Connection = connection;
         }
 
         public T? Get(TKey id)
@@ -27,24 +25,19 @@ namespace Porygon.Entity.MySql.Data
             return Connection.Select<T>(id).First();
         }
 
-        public async Task<T?> GetAsync(TKey id)
+        public override async Task<List<R>> GetAll<R>()
         {
-            return await Connection.Select<T>(id).FirstAsync();
+            return await Connection.Select<T>().ToListAsync<R>();
         }
 
-        public async Task<List<T>> GetAll()
+        public override int Insert(object entity)
         {
-            return await Connection.Select<T>().ToListAsync();
+            return Connection.Insert((T)entity).ExecuteAffrows();
         }
 
-        public int Insert(T entity)
+        public override int Insert(object entity, IDbTransaction transaction)
         {
-            return Connection.Insert(entity).ExecuteAffrows();
-        }
-
-        public int Insert(T entity, IDbTransaction transaction)
-        {
-            return Connection.Insert(entity).WithTransaction((DbTransaction)transaction).ExecuteAffrows();
+            return Connection.Insert((T)entity).WithTransaction((DbTransaction)transaction).ExecuteAffrows();
         }
 
         public async Task<int> InsertAsync(T entity)
@@ -62,14 +55,14 @@ namespace Porygon.Entity.MySql.Data
             return await Connection.Insert(entities).ExecuteAffrowsAsync();
         }
 
-        public int Update(T entity)
+        public override int Update(object entity)
         {
-            return Connection.Update<T>().SetSourceIgnore(entity, IgnoreColumn).ExecuteAffrows();
+            return Connection.Update<T>().SetSourceIgnore((T)entity, IgnoreColumn).ExecuteAffrows();
         }
 
-        public int Update(T entity, IDbTransaction transaction)
+        public override int Update(object entity, IDbTransaction transaction)
         {
-            return Connection.Update<T>().SetSourceIgnore(entity, IgnoreColumn).WithTransaction((DbTransaction)transaction).ExecuteAffrows();
+            return Connection.Update<T>().SetSourceIgnore((T)entity, IgnoreColumn).WithTransaction((DbTransaction)transaction).ExecuteAffrows();
         }
 
         public async Task<int> UpdateAsync(T entity)
@@ -77,14 +70,14 @@ namespace Porygon.Entity.MySql.Data
             return await Connection.Update<T>().SetSourceIgnore(entity, IgnoreColumn).ExecuteAffrowsAsync();
         }
 
-        public virtual int Delete(TKey id)
+        public override int Delete(object id)
         {
-            return Connection.Delete<T>(new { id }).ExecuteAffrows();
+            return Connection.Delete<T>(new { id = (TKey)id }).ExecuteAffrows();
         }
 
-        public virtual int Delete(TKey id, IDbTransaction transaction)
+        public override int Delete(object id, IDbTransaction transaction)
         {
-            return Connection.Delete<T>(new { id }).WithTransaction((DbTransaction)transaction).ExecuteAffrows();
+            return Connection.Delete<T>(new { id = (TKey)id }).WithTransaction((DbTransaction)transaction).ExecuteAffrows();
         }
 
         public async Task<int> DeleteAsync(TKey id)

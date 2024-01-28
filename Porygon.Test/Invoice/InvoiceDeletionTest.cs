@@ -1,7 +1,7 @@
 using System.Data;
 using Moq;
 using Porygon.Entity;
-using Porygon.Entity.Data;
+using Porygon.Entity.Interfaces;
 using Porygon.Entity.Manager;
 
 namespace Porygon.Test.Invoice
@@ -141,7 +141,7 @@ namespace Porygon.Test.Invoice
         [Test]
         public void Test2()
         {
-            Assert.ThrowsAsync<ArgumentException>(async () => await InvoiceManager.Update(null));
+            Assert.ThrowsAsync<ArgumentNullException>(async () => await InvoiceManager.Update(null));
         }
 
 

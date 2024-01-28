@@ -1,6 +1,8 @@
-﻿namespace Porygon.Entity
+﻿using Porygon.Entity.Interfaces;
+
+namespace Porygon.Entity
 {
-    public class EntityFilter<TKey>
+    public class EntityFilter<TKey> : IEntityFilter<TKey>
     {
         public TKey LinkedItemId { get; set; }
         public string Criteria { get; set; }

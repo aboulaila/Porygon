@@ -1,22 +1,22 @@
-﻿namespace Porygon.Entity.Data
+﻿namespace Porygon.Entity.Interfaces
 {
     public interface IEntityDataManager : IEntityDataManager<PoryEntity, Guid, EntityFilter>        
     {
     }
 
     public interface IEntityDataManager<T> : IEntityDataManager<T, Guid, EntityFilter>
-        where T : PoryEntity
+        where T : IKeyEntity<Guid>
     {
     }
 
     public interface IEntityDataManager<T, TFilter> : IEntityDataManager<T, Guid, TFilter>
-        where T : PoryEntity
+        where T : IKeyEntity<Guid>
         where TFilter : EntityFilter
     {
     }
  
     public interface IEntityDataManager<T, TKey, TFilter> : IBasicEntityDataManager<T, TKey>
-        where T : PoryEntity<TKey>
+        where T : IKeyEntity<TKey>
         where TFilter : EntityFilter<TKey>
     {
         Task<List<T>> Search(TFilter filter);

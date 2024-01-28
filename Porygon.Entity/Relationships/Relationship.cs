@@ -1,4 +1,4 @@
-﻿using Porygon.Entity.Manager;
+﻿using Porygon.Entity.Interfaces;
 
 namespace Porygon.Entity.Relationships
 {
@@ -7,7 +7,7 @@ namespace Porygon.Entity.Relationships
         public Type? Entity { get; set; }
         public string? PropertyName { get; set; }
         public string? PropertyIdName { get; set; }
-        public object? EntityId { get; set; }
+        public Guid? EntityId { get; set; }
         public object? EntityInstance { get; set; }
         public IEntityManager? EntityManager { get; set; }
         public RelationshipType? Type { get; set; }

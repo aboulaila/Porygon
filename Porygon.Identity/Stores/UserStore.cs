@@ -75,7 +75,7 @@ namespace Porygon.Identity.Stores
             if (userId == null) throw new ArgumentNullException(nameof(userId));
             if (!Guid.TryParse(userId, out _)) throw new ArgumentException("Not a valid Guid id", nameof(userId));
 
-            return await UserDataManager.GetAsync(userId);
+            return await UserDataManager.GetAsync<User>(userId);
         }
 
         public async Task<User> FindByNameAsync(string userName, CancellationToken cancellationToken)

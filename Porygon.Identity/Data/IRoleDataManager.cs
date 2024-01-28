@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using Porygon.Entity.Data;
+using Porygon.Entity.Interfaces;
 
 namespace Porygon.Identity.Data
 {

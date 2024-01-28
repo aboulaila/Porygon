@@ -1,4 +1,4 @@
-﻿using Porygon.Entity.Data;
+﻿using Porygon.Entity.Interfaces;
 using Porygon.Identity.Entity;
 using System.Security.Claims;
 
